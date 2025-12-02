@@ -1,0 +1,61 @@
+﻿@model IEnumerable<CafeOtomasyon.Models.OrderModel>
+
+@{
+    ViewData["Title"] = "Sipariş Geçmişi";
+}
+
+<h1>Sipariş Geçmişi</h1>
+<p>Tamamlanmış ve ödenmiş siparişlerin kaydı.</p>
+
+<table class="table table-striped table-hover">
+    <thead class="thead-light">
+        <tr>
+            <th>Masa</th>
+            <th>Açılış Saati</th>
+            <th>Kapanış Saati</th>
+            <th>Süre</th>
+            <th class="text-end">Toplam Tutar</th>
+            <th>Detaylar</th> @* İleride siparişin içeriğini görmek için buton eklenebilir *@
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Model)
+        {
+            // Süre Hesaplama (Req #7)
+            string durationString = "Hesaplanamadı";
+            if (order.CloseTime.HasValue)
+            {
+                TimeSpan duration = order.CloseTime.Value - order.OpenTime;
+
+                // Süreyi daha okunabilir formatta yazdıralım
+                if (duration.TotalMinutes < 1)
+                {
+                    durationString = $"{duration.Seconds} sn";
+                }
+                else if (duration.TotalHours < 1)
+                {
+                    durationString = $"{duration.Minutes} dk";
+                }
+                else
+                {
+                    durationString = $"{(int)duration.TotalHours} sa {duration.Minutes} dk";
+                }
+            }
+
+            <tr>
+                <td>@(order.Table?.Name ?? "Silinmiş Masa")</td> @* Masa silinmişse diye kontrol *@
+                <td>@order.OpenTime.ToString("dd.MM.yyyy HH:mm")</td>
+                <td>@order.CloseTime?.ToString("dd.MM.yyyy HH:mm")</td> @* Null olabileceği için ? kullandık *@
+                <td>@durationString</td>
+                <td class="text-end">@order.TotalAmount.ToString("C")</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-info btn-sm">
+                        <i class="fas fa-search"></i> Detaylar
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@* Sayfalama eklemek isterseniz buraya kodlar gelebilir *@

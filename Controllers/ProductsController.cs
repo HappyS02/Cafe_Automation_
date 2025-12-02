@@ -1,0 +1,186 @@
+﻿using CafeOtomasyon.Data;
+using CafeOtomasyon.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace CafeOtomasyon.Controllers 
+{
+    [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
+    public class ProductsController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+
+        public ProductsController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+
+
+        public async Task<IActionResult> Index(string searchString)
+        {
+            // 1. Arama kutusunun dolu kalması için metni View'a geri gönder
+            ViewData["CurrentFilter"] = searchString;
+
+            // 2. Temel sorgu: Ürünleri ve ilişkili kategorilerini al
+            var products = from p in _context.Products.Include(p => p.Category)
+                           select p;
+
+            // 3. Arama kutusu boş değilse filtrele
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                var searchLower = searchString.ToLower(); // Büyük/küçük harf duyarsız arama için
+
+                products = products.Where(p =>
+                    p.Name.ToLower().Contains(searchLower) ||
+                    p.Description.ToLower().Contains(searchLower) ||
+                    (p.Category != null && p.Category.Name.ToLower().Contains(searchLower))
+                );
+            }
+
+            // 4. Filtrelenmiş listeyi View'a gönder
+            return View(await products.AsNoTracking().ToListAsync());
+        }
+
+
+
+        // GET: Products/Create
+        // Bu metot, ürün ekleme formunu gösterir ve kategori listesini de view'a gönderir.
+        public IActionResult Create()
+        {
+            var categoriesList = _context.Categories.ToList();
+            // Kategorileri dropdown'da göstermek için veritabanından çekip View'a gönderiyoruz.
+            ViewData["CategoryId"] = new SelectList(categoriesList, "Id", "Name");
+            return View();
+        }
+
+        // POST: Products/Create
+        // Formdan gelen ürün bilgisini veritabanına kaydeder.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Name,Description,Price,IsActive,CategoryId")] ProductModel productModel)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Add(productModel);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            // Eğer kayıt başarısız olursa, dropdown'ı tekrar doldurup formu geri göstermemiz gerekir.
+            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", productModel.CategoryId);
+            return View(productModel);
+        }
+
+
+
+        // GET: Products/Edit/5 (Düzenleme formunu gösterir)
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var productModel = await _context.Products.FindAsync(id);
+            if (productModel == null)
+            {
+                return NotFound();
+            }
+            // Dropdown'ın dolu gelmesi için Kategori listesini de göndermeliyiz
+            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", productModel.CategoryId);
+            return View(productModel);
+        }
+
+        // POST: Products/Edit/5 (Düzenlenen formu kaydeder)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,IsActive,CategoryId")] ProductModel productModel)
+        {
+            if (id != productModel.Id)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Update(productModel);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!_context.Products.Any(e => e.Id == productModel.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            // Model geçerli değilse formu hatalarla ve dropdown listesiyle geri göster
+            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", productModel.CategoryId);
+            return View(productModel);
+        }
+
+        // GET: Products/Delete/5 (Silme onay sayfasını gösterir)
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var productModel = await _context.Products
+                .Include(p => p.Category) // Kategori adını da göstermek için Include ekledik
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (productModel == null)
+            {
+                return NotFound();
+            }
+
+            return View(productModel);
+        }
+
+        // POST: Products/Delete/5 (Ürünü siler)
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var productModel = await _context.Products.FindAsync(id);
+            if (productModel != null)
+            {
+                _context.Products.Remove(productModel);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Products/ToggleStatus/5 (Aktif/Pasif durumunu değiştirir)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleStatus(int id)
+        {
+            var productModel = await _context.Products.FindAsync(id);
+            if (productModel != null)
+            {
+                // Mevcut durumun tersini ata
+                productModel.IsActive = !productModel.IsActive;
+                _context.Update(productModel);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+    }
+}

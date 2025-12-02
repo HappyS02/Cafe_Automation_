@@ -1,0 +1,7 @@
+# Visual Studio Gecici Dosyalari
+.vs/
+*.suo
+
+# Derleme Ciktilari
+[Bb]in/
+[Oo]bj/

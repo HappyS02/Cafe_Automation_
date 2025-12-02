@@ -1,0 +1,120 @@
+﻿@model CafeOtomasyon.Models.OrderModel
+@{
+    Layout = null; // Layout kullanma
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Adisyon - Sipariş #@Model.Id</title>
+    @*<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />*@ @* Yazdırma için bootstrap'a gerek yok, yorumda kalabilir *@
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            max-width: 300px;
+            margin: auto;
+            color: black; /* Yazdırma için renk */
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .item-row td {
+            padding: 2px 0;
+        }
+
+        .total-row td {
+            padding-top: 10px;
+            border-top: 1px dashed #000;
+            font-weight: bold;
+        }
+
+        .text-end {
+            text-align: right;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px dashed #000;
+            margin: 5px 0;
+        }
+        /* Daha fiş benzeri çizgi */
+
+        
+        @@media print {
+            .no-print {
+                display: none;
+            }
+
+            body {
+                padding: 0;
+                max-width: 100%;
+                margin: 0;
+            }
+            /* Yazdırmada tam sayfa kullan */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h5>Happy Cafe</h5> @* Kafe Adınız *@
+        <p>
+            Tarih: @DateTime.Now.ToString("dd.MM.yyyy HH:mm")<br>
+            Masa: @(Model.Table?.Name ?? "N/A")<br>
+            Sipariş No: @Model.Id
+        </p>
+    </div>
+
+    <table style="width: 100%;">
+        <thead>
+            <tr>
+                <th>Ürün</th>
+                <th class="text-end">Adet</th>
+                <th class="text-end">Tutar</th>
+            </tr>
+            <tr><td colspan="3"><hr></td></tr>
+        </thead>
+        <tbody>
+            @if (Model.OrderDetails != null && Model.OrderDetails.Any())
+            {
+                @foreach (var item in Model.OrderDetails)
+                {
+                    <tr class="item-row">
+                        <td>@(item.Product?.Name ?? "Silinmiş Ürün")</td>
+                        <td class="text-end">@item.Quantity x @item.Price.ToString("F2")</td>
+                        <td class="text-end">@((item.Quantity * item.Price).ToString("F2"))</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="3">Sipariş boş.</td></tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr><td colspan="3"><hr></td></tr> @* Toplamdan önce de çizgi *@
+            <tr class="total-row">
+                <td colspan="2">TOPLAM:</td>
+                <td class="text-end">@Model.TotalAmount.ToString("F2") TL</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <p>Teşekkür Ederiz!</p>
+    </div>
+
+    <script>
+        window.onload = function() {
+            window.print();
+            // setTimeout(function () { window.close(); }, 500); // İsterseniz kapatmayı etkinleştirin
+        }
+    </script>
+
+</body>
+</html>

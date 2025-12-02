@@ -1,0 +1,82 @@
+﻿@model List<ProductModel>
+
+@{
+    ViewData["Title"] = "Ürünler";
+}
+
+<h1>Ürün Listesi</h1>
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <form asp-action="Index" method="get">
+            <div class="input-group">
+                <input type="text" name="searchString" class="form-control" placeholder="Ürün adı, kategori veya açıklamada ara..." value="@ViewData["CurrentFilter"]">
+                <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i> Ara</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-4 text-end">
+        <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus"></i> Yeni Ürün Ekle</a>
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            
+            <th>Ürün Adı</th>
+            <th>Kategori</th>
+            <th>Açıklama</th>
+            <th>Fiyat</th>
+            <th>Durum</th>
+            <th style="width: 200px;">Aksiyonlar</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var product in Model)
+        {
+            <tr>
+                
+                <td>@product.Name</td>
+                <td>@product.Category?.Name</td>
+                <td>@product.Description</td>
+                <td>@product.Price.ToString("C")</td>
+                <td>
+                    @if (product.IsActive)
+                    {
+                        <span class="badge bg-success">Aktif</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Pasif</span>
+                    }
+                </td>
+                <td class="d-flex justify-content-start">
+                    <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-warning btn-sm me-1" title="Düzenle">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+
+                    <a asp-action="Delete" asp-route-id="@product.Id" class="btn btn-danger btn-sm me-1" title="Sil">
+                        <i class="fas fa-trash-alt"></i>
+                    </a>
+
+                    <form asp-action="ToggleStatus" asp-route-id="@product.Id" method="post">
+                        @Html.AntiForgeryToken() @if (product.IsActive)
+                        {
+                            <button type="submit" class="btn btn-secondary btn-sm" title="Pasif Yap">
+                                <i class="fas fa-toggle-off"></i>
+                            </button>
+                        }
+                                        else
+                        {
+                            <button type="submit" class="btn btn-success btn-sm" title="Aktif Et">
+                                <i class="fas fa-toggle-on"></i>
+                            </button>
+                        }
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,48 @@
+﻿@model IEnumerable<CafeOtomasyon.Models.TableModel>
+
+@{
+    ViewData["Title"] = "Masa Yönetimi";
+}
+
+<h1>Masa Yönetimi</h1>
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <form asp-action="Index" method="get">
+            <div class="input-group">
+                <input type="text" name="searchString" class="form-control" placeholder="Masa adı veya konum ile ara..." value="@ViewData["CurrentFilter"]">
+                <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i> Ara</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-4 text-end">
+        <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus"></i> Yeni Masa Ekle</a>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Masa Adı / No</th>
+            <th>Konum</th>
+            <th>Kapasite</th>
+            <th>Durum</th>
+            <th style="width: 150px;">Aksiyonlar</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var table in Model)
+        {
+            <tr>
+                <td>@table.Name</td>
+                <td>@table.Location</td>
+                <td>@table.Capacity Kişilik</td>
+                <td>@table.Status</td>
+                <td class="d-flex align-items-center">
+                    <a asp-action="Edit" asp-route-id="@table.Id" class="btn btn-warning btn-sm me-1" title="Düzenle"><i class="fas fa-pencil-alt"></i></a>
+                    <a asp-action="Delete" asp-route-id="@table.Id" class="btn btn-danger btn-sm" title="Sil"><i class="fas fa-trash-alt"></i></a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,25 @@
+﻿@model CafeOtomasyon.Models.TableModel
+
+@{
+    ViewData["Title"] = "Masa Sil";
+}
+
+<h1>Masa Sil</h1>
+<h3 class="text-danger">Bu masayı kalıcı olarak silmek istediğinizden emin misiniz?</h3>
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">Masa Adı</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Name)</dd>
+        <dt class="col-sm-3">Konum</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Location)</dd>
+        <dt class="col-sm-3">Durum</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Status)</dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Sil" class="btn btn-danger" /> |
+        <a asp-action="Index" class="btn btn-secondary">Listeye Geri Dön</a>
+    </form>
+</div>

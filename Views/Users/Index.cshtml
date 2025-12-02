@@ -1,0 +1,80 @@
+﻿@model IEnumerable<CafeOtomasyon.Models.UserModel>
+
+@{
+    ViewData["Title"] = "Kullanıcı Yönetimi";
+}
+
+<h1>Kullanıcı Yönetimi</h1>
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <form asp-action="Index" method="get">
+            <div class="input-group">
+                <input type="text" name="searchString" class="form-control" placeholder="Kullanıcı adı veya email ile ara..." value="@ViewData["CurrentFilter"]">
+                <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i> Ara</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-4 text-end">
+        <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus"></i> Yeni Kullanıcı Ekle</a>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Kullanıcı Adı</th>
+            <th>Email</th>
+            <th>Telefon</th>
+            <th>TC</th>
+            <th>Durum</th>
+            <th style="width: 150px;">Aksiyonlar</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.Username</td>
+                <td>@user.Email</td>
+                <td>@user.PhoneNumber</td>
+                <td>@user.TC</td>
+                <td>
+                    @if (user.IsActive)
+                    {
+                        <span class="badge bg-success">Aktif</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Pasif</span>
+                    }
+                </td>
+                <td class="d-flex align-items-center">
+                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-warning btn-sm me-1" title="Düzenle">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+
+                    <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-danger btn-sm me-1" title="Sil">
+                        <i class="fas fa-trash-alt"></i>
+                    </a>
+
+                    <form asp-action="ToggleStatus" asp-route-id="@user.Id" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        @if (user.IsActive)
+                        {
+                            <button type="submit" class="btn btn-secondary btn-sm" title="Pasif Yap">
+                                <i class="fas fa-toggle-off"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn btn-success btn-sm" title="Aktif Et">
+                                <i class="fas fa-toggle-on"></i>
+                            </button>
+                        }
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

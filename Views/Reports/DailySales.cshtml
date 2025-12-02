@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "Günlük Satış Raporu";
+    // ViewData'dan değerleri alalım
+    string reportDate = ViewData["ReportDate"] as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    decimal totalRevenue = (decimal)(ViewData["TotalRevenue"] ?? 0m);
+    int orderCount = (int)(ViewData["OrderCount"] ?? 0);
+    DateTime dateValue = DateTime.Parse(reportDate); // String'i DateTime'a çevir (başlık için)
+}
+
+<h1>Günlük Satış Raporu</h1>
+<hr />
+
+<form asp-action="DailySales" method="get" class="row g-3 align-items-end mb-4">
+    <div class="col-auto">
+        <label for="reportDateInput" class="form-label">Tarih Seçin:</label>
+        <input type="date" id="reportDateInput" name="reportDate" class="form-control" value="@reportDate" required />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Raporu Göster</button>
+    </div>
+</form>
+
+@if (ViewData["TotalRevenue"] != null) @* Controller'dan veri geldiyse göster *@
+{
+    <div class="card">
+        <div class="card-header">
+            <h4>@dateValue.ToString("dd MMMM yyyy, dddd") Raporu</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-4">Toplam Tamamlanan Sipariş Sayısı:</dt>
+                <dd class="col-sm-8">@orderCount adet</dd>
+
+                <dt class="col-sm-4">Toplam Ciro (Ödenen Tutar):</dt>
+                <dd class="col-sm-8 fs-5"><strong>@totalRevenue.ToString("C")</strong></dd>
+            </dl>
+        </div>
+        <div class="card-footer text-muted">
+            Bu raporda sadece ödemesi tamamlanmış siparişler yer almaktadır.
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info" role="alert">
+        Lütfen raporunu görmek istediğiniz tarihi seçin.
+    </div>
+}
