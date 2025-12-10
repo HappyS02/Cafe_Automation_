@@ -61,6 +61,17 @@
                 {
                     <a asp-controller="Users" asp-action="Index" class="list-group-item list-group-item-action bg-light"><i class="fas fa-user-shield"></i> Kullanıcı Yönetimi</a>
                 }
+
+
+                @* MENU DEĞERLENDİRME: HERKES *@
+                <a asp-controller="Home" asp-action="Menu" class="nav-link text-dark fw-bold"><i class="fas fa-book-open"></i> Menü & Değerlendirme</a>
+
+                <!--
+                <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="Home" asp-action="Menu">
+                    <i class="fas fa-book-open"></i> Menü & Değerlendirme
+                </a>
+                -->
+                
             </div>
         </div>
         <div id="page-content-wrapper">
@@ -77,8 +88,8 @@
                                 <i class="fas fa-user"></i> @User.Identity.Name
                             </a>
                             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item" href="#">Profil</a>
-                                <a class="dropdown-item" href="#">Ayarlar</a>
+                                @*<a class="dropdown-item" href="#">Profil</a>*@
+                                @*<a class="dropdown-item" href="#">Ayarlar</a>*@
                                 <div class="dropdown-divider"></div>
                                 <form class="form-inline" asp-controller="Account" asp-action="Logout" method="post">
                                     @Html.AntiForgeryToken()

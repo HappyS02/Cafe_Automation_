@@ -38,7 +38,9 @@
                     <h3 class="text-primary">@Model.Price.ToString("C")</h3>
                     <p class="card-text mt-3 text-muted">@Model.Description</p>
 
-                    <a asp-action="Index" class="btn btn-outline-secondary mt-3">Listeye Dön</a>
+                    <a href="javascript:void(0);" onclick="history.back()" class="btn btn-outline-secondary mt-3">
+                        <i class="fas fa-arrow-left"></i> Geri Dön
+                    </a>
                 </div>
             </div>
         </div>
