@@ -1,113 +1,225 @@
 ﻿@model IEnumerable<CafeOtomasyon.Models.OrderModel>
 
+
+
 @{
+
     ViewData["Title"] = "Aktif Siparişler";
+
 }
 
+
+
 <h1>Aktif Siparişler</h1>
+
 <p>Ödemesi alınmamış, devam eden siparişler.</p>
 
+
+
 <div class="row mb-3">
+
     <div class="col-md-8">
+
         <form asp-action="ActiveOrders" method="get">
+
             <div class="input-group">
+
                 <input type="text" name="searchString" class="form-control" placeholder="Masa adına göre ara..." value="@ViewData["CurrentFilter"]">
+
                 <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i> Ara</button>
+
             </div>
+
         </form>
+
     </div>
+
     <div class="col-md-4">
+
         @* Buraya belki "Tümünü Yenile" butonu eklenebilir *@
+
     </div>
+
 </div>
 
+
+
 <table class="table table-hover">
+
     <thead class="thead-light">
+
         <tr>
+
             <th>Masa</th>
+
             <th>Açılış Saati</th>
+
             <th class="text-end">Güncel Tutar</th>
+
             <th class="text-center" style="width: 250px;">İşlemler</th>
+
         </tr>
+
     </thead>
+
     <tbody>
+
         @foreach (var order in Model)
+
         {
+
             <tr>
+
                 <td><strong>@(order.Table?.Name ?? "N/A")</strong></td>
+
                 <td>@order.OpenTime.ToString("HH:mm:ss") (@order.OpenTime.ToShortDateString())</td>
+
                 <td class="text-end"><strong>@order.TotalAmount.ToString("C")</strong></td>
+
                 <td class="text-center">
+
                     <button class="btn btn-primary btn-sm me-1 btn-view-details"
+
                             data-bs-toggle="modal"
+
                             data-bs-target="#tableModal"
+
                             data-table-id="@order.TableModelId"
+
                             data-table-name="@(order.Table?.Name ?? "N/A")"
+
                             title="Detayları Gör / Düzenle">
+
                         <i class="fas fa-pencil-alt"></i> Detay/Düzenle
+
                     </button>
+
+
 
                     <a asp-action="PrintReceipt" asp-route-id="@order.Id" target="_blank" class="btn btn-secondary btn-sm me-1" title="Adisyon Yazdır">
+
                         <i class="fas fa-print"></i> Yazdır
+
                     </a>
 
+
+
                     <button class="btn btn-success btn-sm btn-take-payment"
+
                             data-order-id="@order.Id"
+
                             data-table-name="@(order.Table?.Name ?? "N/A")"
+
                             data-total-amount="@order.TotalAmount.ToString("F2")"
+
                             title="Ödeme Al ve Kapat">
+
                         <i class="fas fa-cash-register"></i> Ödeme Al
+
                     </button>
+
                 </td>
+
             </tr>
+
         }
+
     </tbody>
+
 </table>
 
+
+
 @section Scripts {
+
     <script>
+
         document.addEventListener('DOMContentLoaded', function () {
+
             const paymentButtons = document.querySelectorAll('.btn-take-payment');
 
+
+
             paymentButtons.forEach(button => {
+
                 button.addEventListener('click', function () {
+
                     const orderId = this.getAttribute('data-order-id');
+
                     const tableName = this.getAttribute('data-table-name');
+
                     const totalAmount = parseFloat(this.getAttribute('data-total-amount')).toFixed(2); // String'i sayıya çevir
 
+
+
                     if (!confirm(`${tableName} için ${totalAmount} TL tutarındaki ödeme alındı mı? Sipariş kapatılacak.`)) {
+
                         return; // Kullanıcı iptal ederse dur
+
                     }
 
+
+
                     // Sunucuya ödeme alındı isteği gönder
+
                     fetch(`/Orders/MarkOrderAsPaid?orderId=${orderId}`, {
+
                         method: 'POST',
+
                         headers: { 'Content-Type': 'application/json' }
+
                     })
+
                     .then(response => response.json())
+
                     .then(data => {
+
                         if (data.success) {
+
                             // Başarılı olursa sayfayı yeniden yükle ki liste güncellensin
+
                             // Daha iyisi: Sadece o satırı listeden kaldırmak olurdu.
+
                             alert("Ödeme alındı, sipariş kapatıldı.");
+
                             window.location.reload();
+
                         } else {
+
                             alert("Hata: " + data.message);
+
                         }
+
                     })
+
                     .catch(error => {
+
                          console.error("MarkOrderAsPaid Hatası:", error);
+
                          alert("Ödeme işlemi sırasında bir ağ hatası oluştu.");
+
                     });
+
                 });
+
             });
 
+
+
             // Detay/Düzenle butonu için not:
+
             // Bu butonlar Kat Planı'nda kullandığımız #tableModal'ı açmak için ayarlandı.
+
             // Eğer #tableModal bu sayfada yoksa, ya _Layout.cshtml'e taşımalısınız
+
             // ya da bu sayfaya özel ayrı bir detay gösterme mekanizması kurmalısınız.
+
             // Veya asp-action="Details" asp-route-id="order.Id" linki verebilirsiniz.
 
+
+
         });
+
     </script>
+
 }

@@ -21,5 +21,8 @@ namespace CafeOtomasyon.Models
 
         // Bu siparişe ait ürün detayları
         public ICollection<OrderDetailModel> OrderDetails { get; set; } = new List<OrderDetailModel>();
+
+
+
     }
 }
