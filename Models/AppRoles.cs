@@ -3,4 +3,5 @@
     public const string Yönetici = "Yönetici";
     public const string Kasiyer = "Kasiyer";
     public const string Garson = "Garson";
+    public const string Musteri = "Müşteri";
 }

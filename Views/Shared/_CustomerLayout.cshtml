@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>@ViewData["Title"] - Kafe Menü</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        /* Müşteri ekranı için özel stiller */
+        body {
+            background-color: #f8f9fa; /* Hafif gri arka plan */
+        }
+
+        .customer-navbar {
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,.08);
+        }
+        /* Mobilde kartların daha sıkı durması için */
+        @@media (max-width: 576px) {
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-light customer-navbar fixed-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <span class="navbar-brand mb-0 h1 fw-bold text-primary truncate">
+                <i class="fas fa-mug-hot me-1"></i> <span class="d-none d-sm-inline">Kafe</span> Menü
+            </span>
+
+            <div class="d-flex align-items-center">
+                <span class="text-muted me-2 small d-none d-sm-block">@User.Identity.Name</span>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                        <i class="fas fa-sign-out-alt"></i> <span class="d-none d-sm-inline">Çıkış</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container pt-5 mt-4 pb-5">
+        @RenderBody()
+    </main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

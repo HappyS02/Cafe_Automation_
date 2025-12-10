@@ -1,70 +1,89 @@
 ﻿@model IEnumerable<CafeOtomasyon.Models.ProductModel>
+@using CafeOtomasyon.Data
 
 @{
-    ViewData["Title"] = "Menü & Değerlendirme";
+    ViewData["Title"] = "Menü";
+    // Müşteriye özel layout seçimi
+    if (User.IsInRole(AppRoles.Musteri))
+    {
+        Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+    }
 }
 
-<div class="container mt-5">
-    <div class="text-center mb-5">
-        <h1 class="display-4 fw-bold text-primary">Lezzetlerimiz</h1>
-        <p class="lead text-muted">Ürünlerimizi inceleyin, tadına bakın ve düşüncelerinizi paylaşın!</p>
-    </div>
+<div class="text-center mb-4">
+    <h2 class="fw-bold text-dark d-block d-sm-none">Lezzetleri Keşfet</h2> <h1 class="display-5 fw-bold text-primary d-none d-sm-block">Lezzetleri Keşfet</h1> <p class="text-muted small">Beğendiğiniz ürünlere tıklayıp yorum yapabilirsiniz.</p>
+</div>
 
+@if (!Model.Any())
+{
+    <div class="alert alert-warning text-center shadow-sm rounded-3 p-4">
+        <i class="fas fa-cookie-bite fa-3x mb-3 text-warning"></i><br />
+        Henüz menüye ürün eklenmemiş. Çok yakında!
+    </div>
+}
+else
+{
     @foreach (var group in Model.GroupBy(p => p.Category?.Name).OrderBy(g => g.Key))
     {
-        <h3 class="border-bottom pb-2 mb-4 mt-5 text-secondary">
-            <i class="fas fa-utensils me-2"></i> @(group.Key ?? "Diğer")
-        </h3>
+        <div class="sticky-top bg-white py-2 mb-3 shadow-sm px-3 rounded-3 border" style="top: 70px; z-index: 900;">
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="fas fa-utensils me-2 text-primary"></i> @(group.Key ?? "Diğer")
+            </h5>
+        </div>
 
-        <div class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 mb-5">
             @foreach (var product in group)
             {
                 <div class="col">
-                    <div class="card h-100 shadow-sm border-0 hover-effect">
-                        <div class="card-img-top bg-white d-flex align-items-center justify-content-center overflow-hidden p-3" style="height: 200px;">
-                            @if (!string.IsNullOrEmpty(product.ImageName))
-                            {
-                                <img src="~/img/products/@product.ImageName" class="w-100 h-100" style="object-fit: contain;" alt="@product.Name" />
-                            }
-                            else
-                            {
-                                <i class="fas fa-utensils fa-4x text-secondary"></i>
-                            }
-                        </div>
+                    <a asp-controller="Products" asp-action="Details" asp-route-id="@product.Id" class="text-decoration-none text-dark">
+                        <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden product-card">
 
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title fw-bold">@product.Name</h5>
-                            <p class="card-text text-muted small text-truncate">@product.Description</p>
+                            <div class="card-img-top position-relative bg-white d-flex align-items-center justify-content-center p-2" style="height: 180px;">
+                                @if (!string.IsNullOrEmpty(product.ImageName))
+                                {
+                                    <img src="~/img/products/@product.ImageName" class="img-fluid rounded-3" style="max-height: 100%; object-fit: contain;" alt="@product.Name" />
+                                }
+                                else
+                                {
+                                    <i class="fas fa-hamburger fa-4x text-black-50 opacity-25"></i>
+                                }
+                                <span class="position-absolute top-0 end-0 bg-success text-white px-3 py-1 m-2 rounded-pill fw-bold shadow-sm small">
+                                    @product.Price.ToString("C2")
+                                </span>
+                            </div>
 
-                            <div class="mt-auto d-flex justify-content-between align-items-center">
-                                <span class="fs-5 text-success fw-bold">@product.Price.ToString("C")</span>
+                            <div class="card-body d-flex flex-column p-3 bg-light bg-opacity-50">
+                                <h6 class="card-title fw-bold mb-1 text-truncate">@product.Name</h6>
+                                <p class="card-text text-muted small text-truncate mb-3">@product.Description</p>
 
-                                <a asp-controller="Products" asp-action="Details" asp-route-id="@product.Id" class="btn btn-outline-primary rounded-pill">
-                                    <i class="far fa-comment-dots"></i> Yorumla
-                                </a>
+                                <div class="mt-auto text-end">
+                                    <span class="btn btn-sm btn-outline-primary rounded-pill px-3 stretched-link">
+                                        İncele & Yorumla <i class="fas fa-chevron-right ms-1 small"></i>
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             }
         </div>
     }
-
-    @if (!Model.Any())
-    {
-        <div class="alert alert-warning text-center">
-            Henüz menüye ürün eklenmemiş.
-        </div>
-    }
-</div>
+}
 
 <style>
-    /* Kartların üzerine gelince hafif yukarı kalkması için */
-    .hover-effect {
-        transition: transform 0.2s;
+    /* Kartlara tıklama efekti */
+    .product-card {
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
-        .hover-effect:hover {
-            transform: translateY(-5px);
+        .product-card:active {
+            transform: scale(0.98);
         }
+    /* Mobilde dokunma hissi */
+    @@media (min-width: 768px) {
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+        }
+    }
 </style>

@@ -1,12 +1,17 @@
-﻿<!DOCTYPE html>
-<html lang="tr"> 
+﻿@using CafeOtomasyon.Data
+@using System.Security.Claims
+
+<!DOCTYPE html>
+<html lang="tr">
 
 <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Kafe Otomasyon</title>
     
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/CafeOtomasyon.styles.css" asp-append-version="true" />
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
 
@@ -14,64 +19,64 @@
     <div class="d-flex" id="wrapper">
 
         <div class="bg-light border-right" id="sidebar-wrapper">
-            <div class="sidebar-heading">Menü </div>
+            <div class="sidebar-heading fw-bold text-primary">Kafe Menü </div>
             <div class="list-group list-group-flush">
-                @* Kat Planı: Herkes *@
-                <a asp-controller="Tables" asp-action="FloorPlan" class="list-group-item list-group-item-action bg-light"><i class="fas fa-th-large"></i> Kat Planı</a>
 
-                @* Kategoriler: Yönetici veya Kasiyer *@
+                @* --- YÖNETİCİ GARSON VE KASİYER MENÜLERİ (Müşteri Göremez) --- *@
                 @if (User.IsInRole(AppRoles.Yönetici) || User.IsInRole(AppRoles.Kasiyer))
                 {
-                    <a asp-controller="Categories" asp-action="Index" class="list-group-item list-group-item-action bg-light"><i class="fas fa-tags"></i> Kategoriler</a>
+                    <a asp-controller="Tables" asp-action="FloorPlan" class="list-group-item list-group-item-action bg-light">
+                        <i class="fas fa-th-large me-2"></i> Kat Planı
+                    </a>
+
+                    <a asp-controller="Categories" asp-action="Index" class="list-group-item list-group-item-action bg-light">
+                        <i class="fas fa-tags me-2"></i> Kategoriler
+                    </a>
+
+                    <a asp-controller="Products" asp-action="Index" class="list-group-item list-group-item-action bg-light">
+                        <i class="fas fa-utensils me-2"></i> Ürünler
+                    </a>
+
+                    <a asp-controller="Tables" asp-action="Index" class="list-group-item list-group-item-action bg-light">
+                        <i class="fas fa-chair me-2"></i> Masa Yönetimi
+                    </a>
+
+                    <a asp-controller="Orders" asp-action="ActiveOrders" class="list-group-item list-group-item-action bg-light">
+                        <i class="fas fa-clipboard-list me-2"></i> Aktif Siparişler
+                    </a>
+
+                    <a asp-controller="Orders" asp-action="History" class="list-group-item list-group-item-action bg-light">
+                        <i class="fas fa-history me-2"></i> Sipariş Geçmişi
+                    </a>
+
+                    <a asp-controller="Reports" asp-action="DailySales" class="list-group-item list-group-item-action bg-light">
+                        <i class="fas fa-chart-line me-2"></i> Günlük Rapor
+                    </a>
                 }
 
-                @* Ürünler: Yönetici veya Kasiyer *@
-                @if (User.IsInRole(AppRoles.Yönetici) || User.IsInRole(AppRoles.Kasiyer))
-                {
-                    <a asp-controller="Products" asp-action="Index" class="list-group-item list-group-item-action bg-light"><i class="fas fa-utensils"></i> Ürünler</a>
-                }
-
-                @* Masa Yönetimi: Yönetici veya Kasiyer *@
-                @if (User.IsInRole(AppRoles.Yönetici) || User.IsInRole(AppRoles.Kasiyer))
-                {
-                    <a asp-controller="Tables" asp-action="Index" class="list-group-item list-group-item-action bg-light"><i class="fas fa-chair"></i> Masa Yönetimi</a>
-                }
-
-                @* Siparişler: *@
-                @if (User.IsInRole(AppRoles.Yönetici) || User.IsInRole(AppRoles.Kasiyer))
-                {
-                    <a asp-controller="Orders" asp-action="ActiveOrders" class="list-group-item list-group-item-action bg-light"><i class="fas fa-clipboard-list"></i> Aktif Siparişler</a>
-                }
-
-                @* Sipariş Geçmişi: Yönetici veya Kasiyer *@
-                @if (User.IsInRole(AppRoles.Yönetici) || User.IsInRole(AppRoles.Kasiyer))
-                {
-                    <a asp-controller="Orders" asp-action="History" class="list-group-item list-group-item-action bg-light"><i class="fas fa-history"></i> Sipariş Geçmişi</a>
-                }
-
-                @* Raporlar: Yönetici veya Kasiyer *@
-                @if (User.IsInRole(AppRoles.Yönetici) || User.IsInRole(AppRoles.Kasiyer))
-                {
-                    <a asp-controller="Reports" asp-action="DailySales" class="list-group-item list-group-item-action bg-light"><i class="fas fa-chart-line"></i> Günlük Rapor</a>
-                }
-
-                <!--<a asp-controller="Users" asp-action="Index" class="list-group-item list-group-item-action bg-light"><i class="fas fa-users"></i> Kullanıcılar</a>-->
-                @* Kullanıcılar: Sadece Yönetici *@
+                @* --- SADECE YÖNETİCİ --- *@
                 @if (User.IsInRole(AppRoles.Yönetici))
                 {
-                    <a asp-controller="Users" asp-action="Index" class="list-group-item list-group-item-action bg-light"><i class="fas fa-user-shield"></i> Kullanıcı Yönetimi</a>
+                    <a asp-controller="Users" asp-action="Index" class="list-group-item list-group-item-action bg-light">
+                        <i class="fas fa-user-shield me-2"></i> Kullanıcı Yönetimi
+                    </a>
                 }
 
-
-                @* MENU DEĞERLENDİRME: HERKES *@
-                <a asp-controller="Home" asp-action="Menu" class="nav-link text-dark fw-bold"><i class="fas fa-book-open"></i> Menü & Değerlendirme</a>
-
-                <!--
-                <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="Home" asp-action="Menu">
-                    <i class="fas fa-book-open"></i> Menü & Değerlendirme
-                </a>
-                -->
+                @* --- SADECE GARSON --- *@
+                @if (User.IsInRole(AppRoles.Garson))
+                {
+                    <a asp-controller="Tables" asp-action="FloorPlan" class="list-group-item list-group-item-action bg-light">
+                        <i class="fas fa-th-large me-2"></i> Kat Planı
+                    </a>
+                }
                 
+                @* --- HERKESİN (MÜŞTERİ DAHİL) GÖRECEĞİ MENÜ --- *@
+                <div class="sidebar-heading mt-3 border-top pt-2">Müşteri Alanı</div>
+                
+                <a asp-controller="Home" asp-action="Menu" class="list-group-item list-group-item-action bg-light fw-bold text-primary">
+                    <i class="fas fa-book-open me-2"></i> Menü & Değerlendirme
+                </a>
+
             </div>
         </div>
         <div id="page-content-wrapper">
@@ -80,41 +85,48 @@
                 <div class="container-fluid">
                     <button class="btn btn-primary" id="menu-toggle"><i class="fas fa-bars"></i></button>
 
-                    <a class="navbar-brand mx-auto" href="#">Kafe Yönetim Sistemi</a>
+                    <a class="navbar-brand mx-auto fw-bold" href="#">
+                        @(User.IsInRole(AppRoles.Musteri) ? "Hoş Geldiniz" : "Yönetim Paneli")
+                    </a>
 
                     <ul class="navbar-nav ms-auto mt-2 mt-lg-0">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-user"></i> @User.Identity.Name
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                @*<a class="dropdown-item" href="#">Profil</a>*@
-                                @*<a class="dropdown-item" href="#">Ayarlar</a>*@
-                                <div class="dropdown-divider"></div>
-                                <form class="form-inline" asp-controller="Account" asp-action="Logout" method="post">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="dropdown-item">Çıkış Yap</button>
-                                </form>
-                            </div>
-                        </li>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-user-circle"></i> @User.Identity.Name
+                                    <small class="text-muted">
+                                        (@(User.IsInRole(AppRoles.Yönetici) ? "Yönetici" : 
+                                           User.IsInRole(AppRoles.Kasiyer) ? "Kasiyer" : "Müşteri"))
+                                    </small>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    <div class="dropdown-divider"></div>
+                                    <form class="form-inline" asp-controller="Account" asp-action="Logout" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="btn btn-outline-primary" asp-controller="Account" asp-action="Login">Giriş Yap</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </nav>
+
             <main role="main" class="container-fluid p-4">
                 @RenderBody()
             </main>
 
         </div>
-    </div>
-
-    <!--
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - KafeYonetimSistemi - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
-    </footer>
-    -->
-
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -122,6 +134,7 @@
 
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    
     <script>
         // jQuery Validate virgül (,) sorununu çözen kod
         $.validator.methods.number = function (value, element) {
@@ -132,17 +145,14 @@
             var globalizedValue = value.replace(",", ".");
             return this.optional(element) || (globalizedValue >= param[0] && globalizedValue <= param[1]);
         }
-    </script>
-    @await RenderSectionAsync("Scripts", required: false)
 
-
-    <script>
-        // Menü toggle butonu için event listener
+        // Menü toggle butonu
         $("#menu-toggle").click(function (e) {
             e.preventDefault();
             $("#wrapper").toggleClass("toggled");
         });
     </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
-
 </html>

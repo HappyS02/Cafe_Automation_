@@ -1,5 +1,6 @@
 using CafeOtomasyon.Data;
 using CafeOtomasyon.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -44,6 +45,14 @@ namespace CafeOtomasyon.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+
+
+        [Authorize] // Sadece giriþ yapmýþ olanlar görebilir
+        public IActionResult Welcome()
+        {
+            return View();
         }
     }
 }

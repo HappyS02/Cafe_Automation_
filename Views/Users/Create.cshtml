@@ -1,63 +1,63 @@
 ﻿@model CafeOtomasyon.Models.UserModel
+@using CafeOtomasyon.Data
 
 @{
     ViewData["Title"] = "Yeni Kullanıcı Ekle";
 }
 
-<h1>Yeni Kullanıcı Ekle</h1>
-<hr />
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Create">
-            <div asp-validation-summary="All" class="text-danger"></div>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-plus"></i> Yeni Kullanıcı Ekle</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create">
 
-            <div class="form-group mb-2">
-                <label asp-for="Username" class="control-label">Kullanıcı Adı</label>
-                <input asp-for="Username" class="form-control" />
-            </div>
-            <div class="form-group mb-2">
-                <label asp-for="Password" class="control-label">Şifre</label>
-                <input asp-for="Password" class="form-control" />
-            </div>
-            <div class="form-group mb-2">
-                <label asp-for="TC" class="control-label">TC Kimlik No</label>
-                <input asp-for="TC" class="form-control" />
-            </div>
-            <div class="form-group mb-2">
-                <label asp-for="Email" class="control-label">Email Adresi</label>
-                <input asp-for="Email" class="form-control" />
-            </div>
-            <div class="form-group mb-2">
-                <label asp-for="PhoneNumber" class="control-label">Telefon Numarası</label>
-                <input asp-for="PhoneNumber" class="form-control" />
-            </div>
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-            <div class="form-group mb-2">
-                <label asp-for="Role" class="control-label"></label>
-                <select asp-for="Role" class="form-select">
-                    <option value="">-- Rol Seçiniz --</option>
-                    <option value="Yönetici">Yönetici</option>
-                    <option value="Kasiyer">Kasiyer</option>
-                    <option value="Garson">Garson</option>
-                </select>
-                <span asp-validation-for="Role" class="text-danger"></span>
-            </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ad Soyad</label>
+                            <input asp-for="Name" class="form-control" placeholder="Örn: Ali Yılmaz" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
 
-            <div class="form-group form-check mb-2">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="IsActive" /> Aktif mi?
-                </label>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Kullanıcı Adı</label>
+                            <input asp-for="Username" class="form-control" placeholder="Giriş için kullanılacak" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">E-Posta</label>
+                            <input asp-for="Email" class="form-control" placeholder="mail@ornek.com" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Şifre</label>
+                            <input asp-for="Password" class="form-control" placeholder="******" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Kullanıcı Rolü</label>
+                            <select asp-for="Role" class="form-select">
+                                <option value="@AppRoles.Musteri">Müşteri</option>
+                                <option value="@AppRoles.Kasiyer">Kasiyer</option>
+                                <option value="@AppRoles.Garson">Garson</option>
+                                <option value="@AppRoles.Yönetici">Yönetici</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Kaydet</button>
+                            <a asp-action="Index" class="btn btn-secondary">İptal</a>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="form-group">
-                <input type="submit" value="Kaydet" class="btn btn-primary" />
-                <a asp-action="Index" class="btn btn-secondary">Listeye Geri Dön</a>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
-
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}

@@ -1,122 +1,144 @@
 ﻿@model CafeOtomasyon.Models.ProductModel
+@using CafeOtomasyon.Data
 
 @{
     ViewData["Title"] = Model.Name;
-    // Ortalama puanı hesapla (Yorum yoksa 0)
-    double averageRating = Model.Comments != null && Model.Comments.Any()
-                           ? Model.Comments.Average(c => c.Rating)
-                           : 0;
+
+    // MÜŞTERİ İSE SADE LAYOUT KULLAN
+    bool isCustomer = User.IsInRole(AppRoles.Musteri);
+    if (isCustomer)
+    {
+        Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+    }
 }
 
-<div class="container mt-4">
-    <div class="card shadow-sm mb-4">
-        <div class="row g-0">
-            <div class="col-md-4 bg-light d-flex align-items-center justify-content-center text-secondary" style="min-height: 200px;">
-                <i class="fas fa-utensils fa-5x"></i>
-            </div>
-            <div class="col-md-8">
-                <div class="card-body">
-                    <h2 class="card-title">@Model.Name</h2>
-                    <span class="badge bg-secondary mb-2">@Model.Category?.Name</span>
+<div class="container @(isCustomer ? "mt-0" : "mt-4")">
 
-                    <div class="mb-3 text-warning fs-5">
-                        @for (int i = 1; i <= 5; i++)
-                        {
-                            if (i <= Math.Round(averageRating))
-                            {
-                                <i class="fas fa-star"></i>
-                            }
-                            else
-                            {
-
-                                <i class="far fa-star"></i>
-                            }
-                        }
-                        <span class="text-dark ms-2 fs-6">(@(Model.Comments?.Count ?? 0) Yorum)</span>
-                    </div>
-
-                    <h3 class="text-primary">@Model.Price.ToString("C")</h3>
-                    <p class="card-text mt-3 text-muted">@Model.Description</p>
-
-                    <a href="javascript:void(0);" onclick="history.back()" class="btn btn-outline-secondary mt-3">
-                        <i class="fas fa-arrow-left"></i> Geri Dön
-                    </a>
-                </div>
-            </div>
-        </div>
+    <div class="d-flex align-items-center mb-3">
+        @if (isCustomer)
+        {
+            <a asp-controller="Home" asp-action="Menu" class="btn btn-outline-secondary rounded-circle shadow-sm me-3" style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        }
+        else
+        {
+            <a href="javascript:void(0);" onclick="history.back()" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-arrow-left"></i> Geri
+            </a>
+        }
+        <h3 class="mb-0 fw-bold text-dark">@Model.Name</h3>
     </div>
 
     <div class="row">
-        <div class="col-md-7">
-            <h4>Müşteri Yorumları</h4>
-            <hr />
-            @if (Model.Comments != null && Model.Comments.Any())
-            {
-                <div class="list-group">
-                    @foreach (var comment in Model.Comments.OrderByDescending(c => c.Date))
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="bg-light d-flex align-items-center justify-content-center position-relative" style="height: 300px;">
+                    @if (!string.IsNullOrEmpty(Model.ImageName))
                     {
-                        <div class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1 fw-bold">@comment.UserName</h6>
-                                <small class="text-muted">@comment.Date.ToShortDateString()</small>
-                            </div>
-                            <div class="mb-1 text-warning">
-                                @for (int i = 1; i <= 5; i++)
-                                {
-                                    if (i <= comment.Rating)
-                                    {
-                                        <i class="fas fa-star small"></i>
-                                    }
-                                    else
-                                    {
-
-                                        <i class="far fa-star small"></i>
-                                    }
-                                }
-                            </div>
-                            <p class="mb-1">@comment.Text</p>
-                        </div>
+                        <img src="~/img/products/@Model.ImageName" class="img-fluid" style="max-height: 100%; object-fit: contain;" alt="@Model.Name" />
                     }
+                    else
+                    {
+                        <i class="fas fa-hamburger fa-5x text-secondary opacity-25"></i>
+                    }
+                    <span class="position-absolute bottom-0 end-0 bg-success text-white px-4 py-2 m-3 rounded-pill fw-bold fs-5 shadow">
+                        @Model.Price.ToString("C2")
+                    </span>
                 </div>
-            }
-            else
-            {
-                <div class="alert alert-info">Henüz yorum yapılmamış. İlk yorumu sen yap!</div>
-            }
+
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-primary">Ürün Açıklaması</h5>
+                    <p class="text-muted fs-5">@Model.Description</p>
+
+                    <div class="mt-3">
+                        <span class="badge bg-secondary p-2"><i class="fas fa-tag me-1"></i> @Model.Category?.Name</span>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success p-2 ms-1">Mevcut</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger p-2 ms-1">Tükendi</span>
+                        }
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="col-md-5">
-            <div class="card bg-light border-0">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Yorum Yap & Puanla</h5>
+        <div class="col-md-6">
+
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold"><i class="far fa-star text-warning me-2"></i> Değerlendir</h5>
+                </div>
+                <div class="card-body p-4">
                     <form asp-action="AddComment" method="post">
                         <input type="hidden" name="ProductId" value="@Model.Id" />
 
                         <div class="mb-3">
-                            <label class="form-label">İsminiz</label>
-                            <input type="text" name="UserName" class="form-control" required placeholder="Adınız..." />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Puanınız</label>
-                            <select name="Rating" class="form-select">
-                                <option value="5">⭐⭐⭐⭐⭐ - Harika</option>
-                                <option value="4">⭐⭐⭐⭐ - İyi</option>
-                                <option value="3">⭐⭐⭐ - Orta</option>
-                                <option value="2">⭐⭐ - Kötü</option>
-                                <option value="1">⭐ - Berbat</option>
+                            <label class="form-label small text-muted fw-bold">Puanınız</label>
+                            <select name="Rating" class="form-select w-auto fw-bold text-warning border-warning" required>
+                                <option value="5">⭐⭐⭐⭐⭐ (5 - Mükemmel)</option>
+                                <option value="4">⭐⭐⭐⭐ (4 - İyi)</option>
+                                <option value="3">⭐⭐⭐ (3 - Orta)</option>
+                                <option value="2">⭐⭐ (2 - Kötü)</option>
+                                <option value="1">⭐ (1 - Çok Kötü)</option>
                             </select>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Yorumunuz</label>
-                            <textarea name="Text" class="form-control" rows="3" required placeholder="Düşünceleriniz..."></textarea>
+                            <label class="form-label small text-muted fw-bold">Yorumunuz</label>
+                            <textarea name="Text" class="form-control" rows="3" placeholder="Deneyimlerinizi paylaşın..." required></textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">Gönder</button>
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold">
+                            Yorumu Gönder <i class="fas fa-paper-plane ms-2"></i>
+                        </button>
                     </form>
                 </div>
             </div>
+
+            <h5 class="fw-bold mb-3 ms-2">Müşteri Yorumları (@(Model.Comments?.Count ?? 0))</h5>
+
+            <div class="comment-list" style="max-height: 500px; overflow-y: auto;">
+                @if (Model.Comments != null && Model.Comments.Any())
+                {
+                    @foreach (var comment in Model.Comments.OrderByDescending(c => c.Date))
+                    {
+                        <div class="card border-0 shadow-sm rounded-3 mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light text-primary rounded-circle d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 40px; height: 40px;">
+                                            @comment.UserName.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">@comment.UserName</h6>
+                                            <small class="text-muted" style="font-size: 0.75rem;">@comment.Date.ToString("dd.MM.yyyy HH:mm")</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-warning small">
+                                        @for (int i = 0; i < comment.Rating; i++)
+                                        {
+                                            <i class="fas fa-star"></i>
+                                        }
+                                    </div>
+                                </div>
+                                <p class="card-text text-dark m-0">@comment.Text</p>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted bg-light rounded-3">
+                        <i class="far fa-comment-dots fa-2x mb-2"></i><br />
+                        Henüz yorum yapılmamış. İlk yorumu siz yapın!
+                    </div>
+                }
+            </div>
+
         </div>
     </div>
 </div>

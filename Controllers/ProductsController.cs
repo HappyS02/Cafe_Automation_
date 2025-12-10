@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CafeOtomasyon.Controllers 
+namespace CafeOtomasyon.Controllers
 {
-    [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
+    // Sınıf seviyesindeki [Authorize] kaldırıldı, çünkü buraya Müşteriler de girecek (Detay ve Yorum için)
     public class ProductsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -21,22 +21,18 @@ namespace CafeOtomasyon.Controllers
             _hostEnvironment = hostEnvironment;
         }
 
-
-
+        // YÖNETİCİ VEYA KASİYER GÖREBİLİR
+        [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
         public async Task<IActionResult> Index(string searchString)
         {
-            // 1. Arama kutusunun dolu kalması için metni View'a geri gönder
             ViewData["CurrentFilter"] = searchString;
 
-            // 2. Temel sorgu: Ürünleri ve ilişkili kategorilerini al
             var products = from p in _context.Products.Include(p => p.Category)
                            select p;
 
-            // 3. Arama kutusu boş değilse filtrele
             if (!string.IsNullOrEmpty(searchString))
             {
-                var searchLower = searchString.ToLower(); // Büyük/küçük harf duyarsız arama için
-
+                var searchLower = searchString.ToLower();
                 products = products.Where(p =>
                     p.Name.ToLower().Contains(searchLower) ||
                     p.Description.ToLower().Contains(searchLower) ||
@@ -44,54 +40,44 @@ namespace CafeOtomasyon.Controllers
                 );
             }
 
-            // 4. Filtrelenmiş listeyi View'a gönder
             return View(await products.AsNoTracking().ToListAsync());
         }
 
-
-
         // GET: Products/Create
-        // Bu metot, ürün ekleme formunu gösterir ve kategori listesini de view'a gönderir.
+        [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
         public IActionResult Create()
         {
             var categoriesList = _context.Categories.Where(c => c.IsActive).ToList();
-            // Kategorileri dropdown'da göstermek için veritabanından çekip View'a gönderiyoruz.
             ViewData["CategoryId"] = new SelectList(categoriesList, "Id", "Name");
             return View();
         }
 
         // POST: Products/Create
-        // Formdan gelen ürün bilgisini veritabanına kaydeder.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
         public async Task<IActionResult> Create([Bind("Name,Description,Price,IsActive,CategoryId,ImageUpload")] ProductModel productModel)
         {
             if (ModelState.IsValid)
             {
-                
                 if (productModel.ImageUpload != null)
                 {
-                    // 1. Dosya için benzersiz bir isim oluştur (resim1.jpg yerine guid_resim1.jpg)
                     string wwwRootPath = _hostEnvironment.WebRootPath;
                     string fileName = Guid.NewGuid().ToString() + Path.GetExtension(productModel.ImageUpload.FileName);
                     string path = Path.Combine(wwwRootPath + "/img/products/", fileName);
 
-                    // 2. Klasör yoksa oluştur
                     if (!Directory.Exists(Path.Combine(wwwRootPath + "/img/products/")))
                     {
                         Directory.CreateDirectory(Path.Combine(wwwRootPath + "/img/products/"));
                     }
 
-                    // 3. Dosyayı kaydet
                     using (var fileStream = new FileStream(path, FileMode.Create))
                     {
                         await productModel.ImageUpload.CopyToAsync(fileStream);
                     }
 
-                    // 4. Veritabanına sadece ismini kaydet
                     productModel.ImageName = fileName;
                 }
-                
 
                 _context.Add(productModel);
                 await _context.SaveChangesAsync();
@@ -102,29 +88,23 @@ namespace CafeOtomasyon.Controllers
             return View(productModel);
         }
 
-
-
-        // GET: Products/Edit/5 (Düzenleme formunu gösterir)
+        // GET: Products/Edit/5
+        [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
         public async Task<IActionResult> Edit(int? id)
         {
-
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var productModel = await _context.Products.FindAsync(id);
-            if (productModel == null)
-            {
-                return NotFound();
-            }
+            if (productModel == null) return NotFound();
+
             ViewData["CategoryId"] = new SelectList(_context.Categories.Where(c => c.IsActive), "Id", "Name", productModel.CategoryId);
             return View(productModel);
         }
 
-        // POST: Products/Edit/5 (Düzenlenen formu kaydeder)
+        // POST: Products/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,IsActive,CategoryId,ImageUpload,ImageName")] ProductModel productModel)
         {
             if (id != productModel.Id) return NotFound();
@@ -133,31 +113,24 @@ namespace CafeOtomasyon.Controllers
             {
                 try
                 {
-                    // --- RESİM YÜKLEME İŞLEMİ (Sadece burada olmalı) ---
+                    // --- RESİM YÜKLEME ---
                     if (productModel.ImageUpload != null)
                     {
                         string wwwRootPath = _hostEnvironment.WebRootPath;
                         string fileName = Guid.NewGuid().ToString() + Path.GetExtension(productModel.ImageUpload.FileName);
-
-                        // Klasör yolunu tanımla
                         string uploadPath = Path.Combine(wwwRootPath, "img", "products");
 
-                        // --- KRİTİK DÜZELTME: Klasör yoksa oluştur ---
                         if (!Directory.Exists(uploadPath))
                         {
                             Directory.CreateDirectory(uploadPath);
                         }
-                        // ---------------------------------------------
 
-                        // Dosyayı kaydet
                         string filePath = Path.Combine(uploadPath, fileName);
                         using (var fileStream = new FileStream(filePath, FileMode.Create))
                         {
                             await productModel.ImageUpload.CopyToAsync(fileStream);
                         }
 
-                        // Eski resmi sil (Sunucuda yer açmak için)
-                        // Şu an productModel.ImageName'de ESKİ resmin adı var.
                         if (!string.IsNullOrEmpty(productModel.ImageName))
                         {
                             string oldPath = Path.Combine(uploadPath, productModel.ImageName);
@@ -166,11 +139,9 @@ namespace CafeOtomasyon.Controllers
                                 System.IO.File.Delete(oldPath);
                             }
                         }
-
-                        // Yeni dosya adını veritabanına kaydedilecek alana ata
                         productModel.ImageName = fileName;
                     }
-                    // ---------------------------------------------------
+                    // ---------------------
 
                     _context.Update(productModel);
                     await _context.SaveChangesAsync();
@@ -182,37 +153,30 @@ namespace CafeOtomasyon.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-
             ViewData["CategoryId"] = new SelectList(_context.Categories.Where(c => c.IsActive), "Id", "Name", productModel.CategoryId);
             return View(productModel);
         }
 
-
-        // GET: Products/Delete/5 (Silme onay sayfasını gösterir)
+        // GET: Products/Delete/5
+        [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var productModel = await _context.Products
-                .Include(p => p.Category) // Kategori adını da göstermek için Include ekledik
+                .Include(p => p.Category)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (productModel == null)
-            {
-                return NotFound();
-            }
+            if (productModel == null) return NotFound();
 
             return View(productModel);
         }
 
-
-        // POST: Products/Delete/5 (Ürünü siler)
+        // POST: Products/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var productModel = await _context.Products.FindAsync(id);
@@ -221,43 +185,35 @@ namespace CafeOtomasyon.Controllers
                 _context.Products.Remove(productModel);
                 await _context.SaveChangesAsync();
             }
-
             return RedirectToAction(nameof(Index));
         }
 
-
-        // POST: Products/ToggleStatus/5 (Aktif/Pasif durumunu değiştirir)
+        // POST: Products/ToggleStatus/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var productModel = await _context.Products.FindAsync(id);
             if (productModel != null)
             {
-                // Mevcut durumun tersini ata
                 productModel.IsActive = !productModel.IsActive;
                 _context.Update(productModel);
                 await _context.SaveChangesAsync();
             }
-
             return RedirectToAction(nameof(Index));
         }
 
-
-
-
-
-        // Controllers/ProductsController.cs içine...
-
-        // GET: Products/Details/5 (Ürün detayını ve yorumları gösterir)
-        [AllowAnonymous] // Herkes (giriş yapmayanlar da) ürün detayını görebilsin
+        // GET: Products/Details/5
+        // Detayları HERKES (Giriş yapmayanlar dahil) görebilir
+        [AllowAnonymous]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
 
             var product = await _context.Products
                 .Include(p => p.Category)
-                .Include(p => p.Comments) // Yorumları da çekiyoruz
+                .Include(p => p.Comments)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (product == null) return NotFound();
@@ -265,29 +221,26 @@ namespace CafeOtomasyon.Controllers
             return View(product);
         }
 
-
-
-        // POST: Products/AddComment (Yeni yorum kaydeder)
+        // POST: Products/AddComment
         [HttpPost]
-        [AllowAnonymous] // Herkes yorum yapabilsin (İsterseniz [Authorize] yapabilirsiniz)
+        [Authorize] // DİKKAT: Artık sadece GİRİŞ YAPMIŞ kullanıcılar (Müşteri dahil) yorum yapabilir
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddComment([Bind("ProductId,UserName,Text,Rating")] ProductCommentModel comment)
+        // Bind kısmından 'UserName' çıkarıldı, çünkü otomatik alacağız
+        public async Task<IActionResult> AddComment([Bind("ProductId,Text,Rating")] ProductCommentModel comment)
         {
+            // Kullanıcı adını sistemden otomatik al
+            comment.UserName = User.Identity.Name ?? "Anonim";
+
             if (ModelState.IsValid)
             {
                 comment.Date = DateTime.Now;
                 _context.Comments.Add(comment);
                 await _context.SaveChangesAsync();
 
-                // Yorumdan sonra sayfayı yenile (Detay sayfasına geri dön)
                 return RedirectToAction("Details", new { id = comment.ProductId });
             }
 
-            // Hata varsa yine detay sayfasına dön (Basitlik için)
             return RedirectToAction("Details", new { id = comment.ProductId });
         }
-
-
-
     }
 }

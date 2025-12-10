@@ -13,7 +13,6 @@ namespace CafeOtomasyon.Controllers
 {
     public class AccountController : Controller
     {
-
         private readonly ApplicationDbContext _context;
 
         public AccountController(ApplicationDbContext context)
@@ -21,91 +20,149 @@ namespace CafeOtomasyon.Controllers
             _context = context;
         }
 
-        // GET: /Account/Login (Giriş sayfasını gösterir)
-        [AllowAnonymous] // Herkes erişebilir
+        // GET: /Account/Login
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Login(string returnUrl = null)
         {
-            ViewData["ReturnUrl"] = returnUrl; // Başarılı girişten sonra nereye gidileceğini sakla
+            ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
-        // POST: /Account/Login (Giriş işlemini yapar)
-        [AllowAnonymous] // Giriş yapmayanlar erişebilir
+        // POST: /Account/Login
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
+        public async Task<IActionResult> Login(string usernameOrEmail, string password, string returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-            if (ModelState.IsValid)
+
+            // 1. Kullanıcıyı Bul (Kullanıcı Adı VEYA E-Posta ile)
+            // Bu sorgu: "Girilen metin username'e eşitse YA DA email'e eşitse" diye bakar.
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                (u.Username == usernameOrEmail || u.Email == usernameOrEmail) &&
+                u.Password == password);
+
+            // 2. Kullanıcı bulundu mu ve aktif mi?
+            if (user != null)
             {
-                // Kullanıcıyı veritabanında ara (ŞİFRE KONTROLÜ HENÜZ YAPILMIYOR!)
-                var user = await _context.Users
-                                    .FirstOrDefaultAsync(u => u.Username == model.Username /* && u.Password == HashlenmisSifre(model.Password) */);
-
-                // --- ŞİMDİLİK BASİT ŞİFRE KONTROLÜ ---
-                // !!! GÜVENLİK UYARISI: Bu KESİNLİKLE gerçek uygulamada kullanılmamalıdır !!!
-                if (user != null && user.Password == model.Password && user.IsActive)
+                if (!user.IsActive)
                 {
-                    // Kullanıcı bulundu, aktif ve şifre (şimdilik) doğru. GİRİŞ YAP.
-
-                    // 1. Kullanıcının kimlik bilgilerini (Claims) oluştur
-                    var claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // Kullanıcı ID'si
-                        new Claim(ClaimTypes.Name, user.Username), // Kullanıcı Adı
-                        new Claim(ClaimTypes.Role, user.Role) // KULLANICI ROLÜ (En önemlisi bu!)
-                        // İsterseniz Email gibi başka bilgileri de ekleyebilirsiniz
-                    };
-
-                    // 2. Kimlik oluştur (Authentication şemasıyla eşleşmeli)
-                    var claimsIdentity = new ClaimsIdentity(
-                        claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-                    // 3. Oturum açma özelliklerini ayarla (örn: kalıcı cookie)
-                    var authProperties = new AuthenticationProperties
-                    {
-                        IsPersistent = model.RememberMe, // "Beni Hatırla" seçiliyse cookie kalıcı olur
-                        ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(7) : (DateTimeOffset?)null // Kalıcıysa 7 gün
-                    };
-
-                    // 4. Kullanıcıyı SİSTEME GİRİŞ YAP (Cookie oluşturulur)
-                    await HttpContext.SignInAsync(
-                        CookieAuthenticationDefaults.AuthenticationScheme,
-                        new ClaimsPrincipal(claimsIdentity),
-                        authProperties);
-
-                    // Başarılı giriş sonrası yönlendirme
-                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                    {
-                        return Redirect(returnUrl); // Geldiği sayfaya geri gönder
-                    }
-                    else
-                    {
-                        return RedirectToAction("FloorPlan", "Tables"); // Veya varsayılan ana sayfaya gönder
-                    }
+                    ViewBag.Error = "Hesabınız pasif durumdadır. Yönetici ile görüşün.";
+                    return View();
                 }
-                // --- /BASİT ŞİFRE KONTROLÜ SONU ---
 
-                // Kullanıcı bulunamadı, pasif veya şifre yanlışsa hata ver
-                ModelState.AddModelError(string.Empty, "Geçersiz kullanıcı adı veya şifre ya da hesap pasif.");
+                // 3. Kimlik Oluştur
+                var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Name), // Ekranda Ad Soyad görünsün
+            new Claim(ClaimTypes.Role, user.Role)
+        };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties { IsPersistent = true }; // Beni hatırla
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+
+                // 1. Eğer MÜŞTERİ ise -> Direkt MENÜ sayfasına uçur 🚀
+                if (user.Role == AppRoles.Musteri)
+                {
+                    return RedirectToAction("Menu", "Home");
+                }
+
+                // 2. Eğer PERSONEL (Yönetici, Kasiyer, Garson) ise -> HOŞ GELDİNİZ paneline gönder 🏠
+                // Böylece Yönetim Paneli mi yoksa Menü mü diye seçebilirler.
+                return RedirectToAction("Welcome", "Home");
+
+                // (Eğer returnUrl varsa onu kontrol etmek istersen buraya ekleyebilirsin ama 
+                // yukarıdaki mantık daha temiz bir akış sağlar.)
+            
+        }
+
+            ViewBag.Error = "Kullanıcı adı/E-posta veya şifre hatalı.";
+            return View();
+        }
+
+        // --- YENİ EKLENEN: KAYIT OLMA (REGISTER) ---
+
+        // GET: /Account/Register
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult Register()
+        {
+            return View();
+        }
+
+
+
+        // POST: /Account/Register
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(string name, string username, string email, string password)
+        {
+            // 1. Boş alan kontrolü
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            {
+                ViewBag.Error = "Lütfen tüm alanları doldurun.";
+                return View();
             }
 
-            // Model geçerli değilse veya giriş başarısızsa formu tekrar göster
-            return View(model);
+            try
+            {
+                // 2. Kullanıcı Adı veya E-Posta daha önce alınmış mı?
+                if (await _context.Users.AnyAsync(u => u.Username == username || u.Email == email))
+                {
+                    ViewBag.Error = "Bu kullanıcı adı veya e-posta zaten sistemde kayıtlı.";
+                    return View();
+                }
+
+                // 3. Yeni Kullanıcıyı Oluştur
+                var newUser = new UserModel
+                {
+                    Name = name,
+                    Username = username,
+                    Email = email,         // <-- E-Posta eklendi
+                    Password = password,
+                    Role = AppRoles.Musteri, // Otomatik Müşteri Rolü
+                    IsActive = true
+                };
+
+                _context.Users.Add(newUser);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Kayıt başarılı! Giriş yapabilirsiniz.";
+                return RedirectToAction("Login");
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = "Hata oluştu: " + ex.Message;
+                return View();
+            }
         }
 
-        // GET veya POST: /Account/Logout (Çıkış işlemini yapar)
-        [HttpPost] // Güvenlik için genellikle POST tercih edilir
-        [ValidateAntiForgeryToken]
+        // ---------------------------------------------
+
+        // POST: /Account/Logout
+        [HttpPost] // Post olması güvenlik için daha iyidir ama link ile çıkış için GET de eklenebilir
         public async Task<IActionResult> Logout()
         {
-            // Kullanıcıyı SİSTEMDEN ÇIKIŞ YAP (Cookie silinir)
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Login", "Account"); // Giriş sayfasına yönlendir
+            return RedirectToAction("Login", "Account");
         }
 
-        // GET: /Account/AccessDenied (Yetkisiz Erişim Sayfası)
+        // Link ile çıkış yapmak istersen (Navbar'daki link için)
+        [HttpGet]
+        public async Task<IActionResult> LogoutGet()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login", "Account");
+        }
+
         [HttpGet]
         public IActionResult AccessDenied()
         {
