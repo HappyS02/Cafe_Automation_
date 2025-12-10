@@ -8,7 +8,7 @@
 <hr />
 <div class="row">
     <div class="col-md-6">
-        <form asp-action="Edit">
+        <form asp-action="Edit" enctype="multipart/form-data">
             <input type="hidden" asp-for="Id" />
             <div asp-validation-summary="All" class="text-danger"></div>
 
@@ -37,6 +37,21 @@
                 <input asp-for="Price" class="form-control" type="text" placeholder="0,00" />
                 <span asp-validation-for="Price" class="text-danger"></span>
             </div>
+
+            <input type="hidden" asp-for="ImageName" />
+
+    <div class="mb-3">
+        <label class="form-label">Ürün Görseli</label>
+        <input asp-for="ImageUpload" type="file" class="form-control" accept="image/*" />
+        
+        @if (!string.IsNullOrEmpty(Model.ImageName))
+        {
+            <div class="mt-2">
+                <small>Şu anki görsel:</small><br />
+                <img src="~/img/products/@Model.ImageName" width="100" class="img-thumbnail" />
+            </div>
+        }
+    </div>
 
            <!-- <div class="form-group form-check mb-2">
                 <label class="form-check-label">

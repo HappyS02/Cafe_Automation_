@@ -13,10 +13,12 @@ namespace CafeOtomasyon.Controllers
     public class ProductsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _hostEnvironment;
 
-        public ProductsController(ApplicationDbContext context)
+        public ProductsController(ApplicationDbContext context, IWebHostEnvironment hostEnvironment)
         {
             _context = context;
+            _hostEnvironment = hostEnvironment;
         }
 
 
@@ -62,14 +64,40 @@ namespace CafeOtomasyon.Controllers
         // Formdan gelen ürün bilgisini veritabanına kaydeder.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Description,Price,IsActive,CategoryId")] ProductModel productModel)
+        public async Task<IActionResult> Create([Bind("Name,Description,Price,IsActive,CategoryId,ImageUpload")] ProductModel productModel)
         {
             if (ModelState.IsValid)
             {
+                
+                if (productModel.ImageUpload != null)
+                {
+                    // 1. Dosya için benzersiz bir isim oluştur (resim1.jpg yerine guid_resim1.jpg)
+                    string wwwRootPath = _hostEnvironment.WebRootPath;
+                    string fileName = Guid.NewGuid().ToString() + Path.GetExtension(productModel.ImageUpload.FileName);
+                    string path = Path.Combine(wwwRootPath + "/img/products/", fileName);
+
+                    // 2. Klasör yoksa oluştur
+                    if (!Directory.Exists(Path.Combine(wwwRootPath + "/img/products/")))
+                    {
+                        Directory.CreateDirectory(Path.Combine(wwwRootPath + "/img/products/"));
+                    }
+
+                    // 3. Dosyayı kaydet
+                    using (var fileStream = new FileStream(path, FileMode.Create))
+                    {
+                        await productModel.ImageUpload.CopyToAsync(fileStream);
+                    }
+
+                    // 4. Veritabanına sadece ismini kaydet
+                    productModel.ImageName = fileName;
+                }
+                
+
                 _context.Add(productModel);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+
             ViewData["CategoryId"] = new SelectList(_context.Categories.Where(c => c.IsActive), "Id", "Name", productModel.CategoryId);
             return View(productModel);
         }
@@ -79,6 +107,7 @@ namespace CafeOtomasyon.Controllers
         // GET: Products/Edit/5 (Düzenleme formunu gösterir)
         public async Task<IActionResult> Edit(int? id)
         {
+
             if (id == null)
             {
                 return NotFound();
@@ -96,36 +125,68 @@ namespace CafeOtomasyon.Controllers
         // POST: Products/Edit/5 (Düzenlenen formu kaydeder)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,IsActive,CategoryId")] ProductModel productModel)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,IsActive,CategoryId,ImageUpload,ImageName")] ProductModel productModel)
         {
-            if (id != productModel.Id)
-            {
-                return NotFound();
-            }
+            if (id != productModel.Id) return NotFound();
 
             if (ModelState.IsValid)
             {
                 try
                 {
+                    // --- RESİM YÜKLEME İŞLEMİ (Sadece burada olmalı) ---
+                    if (productModel.ImageUpload != null)
+                    {
+                        string wwwRootPath = _hostEnvironment.WebRootPath;
+                        string fileName = Guid.NewGuid().ToString() + Path.GetExtension(productModel.ImageUpload.FileName);
+
+                        // Klasör yolunu tanımla
+                        string uploadPath = Path.Combine(wwwRootPath, "img", "products");
+
+                        // --- KRİTİK DÜZELTME: Klasör yoksa oluştur ---
+                        if (!Directory.Exists(uploadPath))
+                        {
+                            Directory.CreateDirectory(uploadPath);
+                        }
+                        // ---------------------------------------------
+
+                        // Dosyayı kaydet
+                        string filePath = Path.Combine(uploadPath, fileName);
+                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await productModel.ImageUpload.CopyToAsync(fileStream);
+                        }
+
+                        // Eski resmi sil (Sunucuda yer açmak için)
+                        // Şu an productModel.ImageName'de ESKİ resmin adı var.
+                        if (!string.IsNullOrEmpty(productModel.ImageName))
+                        {
+                            string oldPath = Path.Combine(uploadPath, productModel.ImageName);
+                            if (System.IO.File.Exists(oldPath))
+                            {
+                                System.IO.File.Delete(oldPath);
+                            }
+                        }
+
+                        // Yeni dosya adını veritabanına kaydedilecek alana ata
+                        productModel.ImageName = fileName;
+                    }
+                    // ---------------------------------------------------
+
                     _context.Update(productModel);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_context.Products.Any(e => e.Id == productModel.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    if (!_context.Products.Any(e => e.Id == productModel.Id)) return NotFound();
+                    else throw;
                 }
                 return RedirectToAction(nameof(Index));
             }
+
             ViewData["CategoryId"] = new SelectList(_context.Categories.Where(c => c.IsActive), "Id", "Name", productModel.CategoryId);
             return View(productModel);
         }
+
 
         // GET: Products/Delete/5 (Silme onay sayfasını gösterir)
         public async Task<IActionResult> Delete(int? id)
@@ -148,6 +209,7 @@ namespace CafeOtomasyon.Controllers
             return View(productModel);
         }
 
+
         // POST: Products/Delete/5 (Ürünü siler)
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
@@ -162,6 +224,7 @@ namespace CafeOtomasyon.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
 
         // POST: Products/ToggleStatus/5 (Aktif/Pasif durumunu değiştirir)
         [HttpPost]
@@ -201,6 +264,8 @@ namespace CafeOtomasyon.Controllers
 
             return View(product);
         }
+
+
 
         // POST: Products/AddComment (Yeni yorum kaydeder)
         [HttpPost]
