@@ -34,7 +34,7 @@
 
             <div class="form-group mb-2">
                 <label asp-for="Price" class="control-label">Fiyat</label>
-                <input asp-for="Price" class="form-control" />
+                <input asp-for="Price" class="form-control" type="text" placeholder="0,00" />
                 <span asp-validation-for="Price" class="text-danger"></span>
             </div>
 
@@ -53,7 +53,19 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        // BU KOD, SAYFA YÜKLENDİKTEN SONRA ÇALIŞIR VE HATAYI ENGELLER
+        $.validator.methods.number = function (value, element) {
+            // Virgüllü sayıları da (10,50) geçerli sayı olarak kabul et
+            return this.optional(element) || /^-?(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d+)?$/.test(value);
+        }
+
+        // Aralık kontrolü (Range) için de virgülü noktaya çevirip kontrol et
+        $.validator.methods.range = function (value, element, param) {
+            var globalizedValue = value.replace(",", ".");
+            return this.optional(element) || (globalizedValue >= param[0] && globalizedValue <= param[1]);
+        }
+    </script>
 }

@@ -1,0 +1,120 @@
+﻿@model CafeOtomasyon.Models.ProductModel
+
+@{
+    ViewData["Title"] = Model.Name;
+    // Ortalama puanı hesapla (Yorum yoksa 0)
+    double averageRating = Model.Comments != null && Model.Comments.Any()
+                           ? Model.Comments.Average(c => c.Rating)
+                           : 0;
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm mb-4">
+        <div class="row g-0">
+            <div class="col-md-4 bg-light d-flex align-items-center justify-content-center text-secondary" style="min-height: 200px;">
+                <i class="fas fa-utensils fa-5x"></i>
+            </div>
+            <div class="col-md-8">
+                <div class="card-body">
+                    <h2 class="card-title">@Model.Name</h2>
+                    <span class="badge bg-secondary mb-2">@Model.Category?.Name</span>
+
+                    <div class="mb-3 text-warning fs-5">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            if (i <= Math.Round(averageRating))
+                            {
+                                <i class="fas fa-star"></i>
+                            }
+                            else
+                            {
+
+                                <i class="far fa-star"></i>
+                            }
+                        }
+                        <span class="text-dark ms-2 fs-6">(@(Model.Comments?.Count ?? 0) Yorum)</span>
+                    </div>
+
+                    <h3 class="text-primary">@Model.Price.ToString("C")</h3>
+                    <p class="card-text mt-3 text-muted">@Model.Description</p>
+
+                    <a asp-action="Index" class="btn btn-outline-secondary mt-3">Listeye Dön</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-7">
+            <h4>Müşteri Yorumları</h4>
+            <hr />
+            @if (Model.Comments != null && Model.Comments.Any())
+            {
+                <div class="list-group">
+                    @foreach (var comment in Model.Comments.OrderByDescending(c => c.Date))
+                    {
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 fw-bold">@comment.UserName</h6>
+                                <small class="text-muted">@comment.Date.ToShortDateString()</small>
+                            </div>
+                            <div class="mb-1 text-warning">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    if (i <= comment.Rating)
+                                    {
+                                        <i class="fas fa-star small"></i>
+                                    }
+                                    else
+                                    {
+
+                                        <i class="far fa-star small"></i>
+                                    }
+                                }
+                            </div>
+                            <p class="mb-1">@comment.Text</p>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">Henüz yorum yapılmamış. İlk yorumu sen yap!</div>
+            }
+        </div>
+
+        <div class="col-md-5">
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Yorum Yap & Puanla</h5>
+                    <form asp-action="AddComment" method="post">
+                        <input type="hidden" name="ProductId" value="@Model.Id" />
+
+                        <div class="mb-3">
+                            <label class="form-label">İsminiz</label>
+                            <input type="text" name="UserName" class="form-control" required placeholder="Adınız..." />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Puanınız</label>
+                            <select name="Rating" class="form-select">
+                                <option value="5">⭐⭐⭐⭐⭐ - Harika</option>
+                                <option value="4">⭐⭐⭐⭐ - İyi</option>
+                                <option value="3">⭐⭐⭐ - Orta</option>
+                                <option value="2">⭐⭐ - Kötü</option>
+                                <option value="1">⭐ - Berbat</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Yorumunuz</label>
+                            <textarea name="Text" class="form-control" rows="3" required placeholder="Düşünceleriniz..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Gönder</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

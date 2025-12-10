@@ -18,5 +18,7 @@ namespace CafeOtomasyon.Models
         public CategoryModel? Category { get; set; }
         public string? Description { get; set; }
         public bool IsActive { get; set; }
+
+        public ICollection<ProductCommentModel>? Comments { get; set; }
     }
 }

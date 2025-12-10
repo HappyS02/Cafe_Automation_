@@ -3,135 +3,146 @@ using CafeOtomasyon.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 using System.Linq;
-using System.Linq;
+using System.Threading.Tasks;
 
-// Yönetici VEYA Kasiyer erişebilir (Virgülle ayırma 'VEYA' anlamına gelir)
-[Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
-public class CategoriesController : Controller
+namespace CafeOtomasyon.Controllers
 {
-    private readonly ApplicationDbContext _context; // DbContext'i tutacak değişken
-
-    // Constructor üzerinden DbContext'i alıyoruz (Dependency Injection)
-    public CategoriesController(ApplicationDbContext context)
+    // Bu Controller'a sadece Yönetici ve Kasiyer girebilir
+    [Authorize(Roles = $"{AppRoles.Yönetici},{AppRoles.Kasiyer}")]
+    public class CategoriesController : Controller
     {
-        _context = context;
-    }
+        private readonly ApplicationDbContext _context;
 
-    public IActionResult Index(string searchString)
-    {
-        // ViewData ile arama metnini View'a geri taşıyoruz ki kutu boşalmasın.
-        ViewData["CurrentFilter"] = searchString;
-
-        /*var categories = new List<CategoryModel>
+        public CategoriesController(ApplicationDbContext context)
         {
-            new CategoryModel { Category="Sıcak İçecekler", IsActive = true },
-            new CategoryModel { Category="Sıcak İçecekler", IsActive = true },
-            new CategoryModel { Category="Sıcak İçecekler", IsActive = true }
-        };*/
-        // Veriyi artık hardcoded liste yerine veritabanından çekiyoruz
-        var categories = from c in _context.Categories
-                         select c;
-
-        // Eğer arama kutusu boş değilse, listeyi filtrele
-        if (!string.IsNullOrEmpty(searchString))
-        {
-            // Büyük/küçük harf duyarsız arama yapıyoruz
-            categories = categories.Where(c => c.Name.ToLower().Contains(searchString.ToLower()));
+            _context = context;
         }
 
-        return View(categories.ToList());
-    }
-
-    // GET: Categories/Create
-    // Bu metot, kullanıcıya boş kategori ekleme formunu gösterir.
-    public IActionResult Create()
-    {
-        // Varsayım: Kullanıcının rolü Session'da saklanıyor
-        var userRole = HttpContext.Session.GetString("UserRole");
-        if (userRole != "Yönetici")
+        // GET: Categories
+        public async Task<IActionResult> Index(string searchString)
         {
-            // Yetkisi yoksa Ana Sayfaya veya bir Hata Sayfasına yönlendir
-            return RedirectToAction("Index", "Home");
-            // Veya return Forbid(); // 403 Yetkisiz hatası döndürür
-        }
+            ViewData["CurrentFilter"] = searchString;
 
-        return View();
-    }
+            var categories = from c in _context.Categories
+                             select c;
 
-    // POST: Categories/Create
-    // Bu metot, formdan gönderilen bilgiyi alır ve veritabanına kaydeder.
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Name")] CategoryModel categoryModel)
-    {
-        // --- YETKİLENDİRME KONTROLÜ ---
-        var userRole = HttpContext.Session.GetString("UserRole");
-        if (userRole != "Yönetici")
-        {
-            return Forbid();
-        }
-        // --- /YETKİLENDİRME KONTROLÜ ---
-
-        if (!ModelState.IsValid) // Model geçerli mi kontrolü
-        {
-            return View(categoryModel); // Model geçerli değilse, formu hatalarla birlikte geri göster
-        }
-        categoryModel.IsActive = true; // Kaydederken 'true' olmaya zorla
-
-        _context.Add(categoryModel);          // Yeni kategoriyi DbContext'e ekle
-        await _context.SaveChangesAsync();    // Değişiklikleri veritabanına kaydet
-        return RedirectToAction(nameof(Index)); // Kayıt sonrası liste sayfasına yönlendir
-    }
-
-
-    // GET: Categories/Edit/5 (Düzenleme formunu gösterir)
-    public async Task<IActionResult> Edit(int? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var categoryModel = await _context.Categories.FindAsync(id);
-        if (categoryModel == null)
-        {
-            return NotFound();
-        }
-        return View(categoryModel);
-    }
-
-    // POST: Categories/Edit/5 (Düzenlenen formu kaydeder)
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Name,IsActive")] CategoryModel categoryModel)
-    {
-        if (id != categoryModel.Id)
-        {
-            return NotFound();
-        }
-
-        if (ModelState.IsValid)
-        {
-            try
+            if (!string.IsNullOrEmpty(searchString))
             {
-                _context.Update(categoryModel);
+                categories = categories.Where(c => c.Name.ToLower().Contains(searchString.ToLower()));
+            }
+
+            return View(await categories.ToListAsync());
+        }
+
+        // GET: Categories/Create
+        // Sadece YÖNETİCİ kategori ekleyebilsin istiyorsanız bu satırı ekleyin:
+        // [Authorize(Roles = AppRoles.Yönetici)] 
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: Categories/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        // [Authorize(Roles = AppRoles.Yönetici)] // Sadece yönetici kayıt yapabilsin
+        public async Task<IActionResult> Create([Bind("Name")] CategoryModel categoryModel)
+        {
+            if (ModelState.IsValid)
+            {
+                categoryModel.IsActive = true;
+                _context.Add(categoryModel);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            return View(categoryModel);
+        }
+
+        // GET: Categories/Edit/5
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var categoryModel = await _context.Categories.FindAsync(id);
+            if (categoryModel == null) return NotFound();
+
+            return View(categoryModel);
+        }
+
+        // POST: Categories/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,IsActive")] CategoryModel categoryModel)
+        {
+            if (id != categoryModel.Id) return NotFound();
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Update(categoryModel);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!_context.Categories.Any(e => e.Id == categoryModel.Id)) return NotFound();
+                    else throw;
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            return View(categoryModel);
+        }
+
+
+        // --- CategoriesController.cs EN ALTINA EKLE ---
+
+        // 1. Silme Onay Sayfasını Gösterir (GET)
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var category = await _context.Categories
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (category == null) return NotFound();
+
+            return View(category);
+        }
+
+        // 2. Silme İşlemini Gerçekleştirir (POST)
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var category = await _context.Categories.FindAsync(id);
+
+            if (category != null)
+            {
+                // ÖNEMLİ KONTROL: Eğer bu kategoriye bağlı ürünler varsa silmeyi engellemek daha güvenlidir.
+                // Ama şimdilik direkt siliyoruz.
+                _context.Categories.Remove(category);
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+
+            return RedirectToAction(nameof(Index));
+        }
+
+
+        // POST: Categories/ToggleStatus/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleStatus(int id)
+        {
+            var category = await _context.Categories.FindAsync(id);
+            if (category != null)
             {
-                if (!_context.Categories.Any(e => e.Id == categoryModel.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                // Mevcut durumun tam tersini yap (True ise False, False ise True)
+                category.IsActive = !category.IsActive;
+                _context.Update(category);
+                await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
         }
-        return View(categoryModel);
     }
 }

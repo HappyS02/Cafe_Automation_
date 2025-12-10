@@ -52,7 +52,7 @@ namespace CafeOtomasyon.Controllers
         // Bu metot, ürün ekleme formunu gösterir ve kategori listesini de view'a gönderir.
         public IActionResult Create()
         {
-            var categoriesList = _context.Categories.ToList();
+            var categoriesList = _context.Categories.Where(c => c.IsActive).ToList();
             // Kategorileri dropdown'da göstermek için veritabanından çekip View'a gönderiyoruz.
             ViewData["CategoryId"] = new SelectList(categoriesList, "Id", "Name");
             return View();
@@ -70,8 +70,7 @@ namespace CafeOtomasyon.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            // Eğer kayıt başarısız olursa, dropdown'ı tekrar doldurup formu geri göstermemiz gerekir.
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", productModel.CategoryId);
+            ViewData["CategoryId"] = new SelectList(_context.Categories.Where(c => c.IsActive), "Id", "Name", productModel.CategoryId);
             return View(productModel);
         }
 
@@ -90,8 +89,7 @@ namespace CafeOtomasyon.Controllers
             {
                 return NotFound();
             }
-            // Dropdown'ın dolu gelmesi için Kategori listesini de göndermeliyiz
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", productModel.CategoryId);
+            ViewData["CategoryId"] = new SelectList(_context.Categories.Where(c => c.IsActive), "Id", "Name", productModel.CategoryId);
             return View(productModel);
         }
 
@@ -125,8 +123,7 @@ namespace CafeOtomasyon.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            // Model geçerli değilse formu hatalarla ve dropdown listesiyle geri göster
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", productModel.CategoryId);
+            ViewData["CategoryId"] = new SelectList(_context.Categories.Where(c => c.IsActive), "Id", "Name", productModel.CategoryId);
             return View(productModel);
         }
 
@@ -182,5 +179,50 @@ namespace CafeOtomasyon.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+
+
+
+
+        // Controllers/ProductsController.cs içine...
+
+        // GET: Products/Details/5 (Ürün detayını ve yorumları gösterir)
+        [AllowAnonymous] // Herkes (giriş yapmayanlar da) ürün detayını görebilsin
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Comments) // Yorumları da çekiyoruz
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (product == null) return NotFound();
+
+            return View(product);
+        }
+
+        // POST: Products/AddComment (Yeni yorum kaydeder)
+        [HttpPost]
+        [AllowAnonymous] // Herkes yorum yapabilsin (İsterseniz [Authorize] yapabilirsiniz)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddComment([Bind("ProductId,UserName,Text,Rating")] ProductCommentModel comment)
+        {
+            if (ModelState.IsValid)
+            {
+                comment.Date = DateTime.Now;
+                _context.Comments.Add(comment);
+                await _context.SaveChangesAsync();
+
+                // Yorumdan sonra sayfayı yenile (Detay sayfasına geri dön)
+                return RedirectToAction("Details", new { id = comment.ProductId });
+            }
+
+            // Hata varsa yine detay sayfasına dön (Basitlik için)
+            return RedirectToAction("Details", new { id = comment.ProductId });
+        }
+
+
+
     }
 }

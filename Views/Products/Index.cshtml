@@ -12,6 +12,7 @@
             <div class="input-group">
                 <input type="text" name="searchString" class="form-control" placeholder="Ürün adı, kategori veya açıklamada ara..." value="@ViewData["CurrentFilter"]">
                 <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i> Ara</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Sıfırla</a>
             </div>
         </form>
     </div>
@@ -33,15 +34,19 @@
             <th style="width: 200px;">Aksiyonlar</th>
         </tr>
     </thead>
+
     <tbody>
         @foreach (var product in Model)
         {
             <tr>
-                
                 <td>@product.Name</td>
+
                 <td>@product.Category?.Name</td>
+
                 <td>@product.Description</td>
+
                 <td>@product.Price.ToString("C")</td>
+
                 <td>
                     @if (product.IsActive)
                     {
@@ -52,23 +57,30 @@
                         <span class="badge bg-secondary">Pasif</span>
                     }
                 </td>
-                <td class="d-flex justify-content-start">
-                    <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-warning btn-sm me-1" title="Düzenle">
+
+                <td class="d-flex gap-1">
+
+                    <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-info btn-sm text-white" title="İncele">
+                        <i class="fas fa-eye"></i>
+                    </a>
+
+                    <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-warning btn-sm" title="Düzenle">
                         <i class="fas fa-pencil-alt"></i>
                     </a>
 
-                    <a asp-action="Delete" asp-route-id="@product.Id" class="btn btn-danger btn-sm me-1" title="Sil">
+                    <a asp-action="Delete" asp-route-id="@product.Id" class="btn btn-danger btn-sm" title="Sil">
                         <i class="fas fa-trash-alt"></i>
                     </a>
 
-                    <form asp-action="ToggleStatus" asp-route-id="@product.Id" method="post">
-                        @Html.AntiForgeryToken() @if (product.IsActive)
+                    <form asp-action="ToggleStatus" asp-route-id="@product.Id" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        @if (product.IsActive)
                         {
                             <button type="submit" class="btn btn-secondary btn-sm" title="Pasif Yap">
                                 <i class="fas fa-toggle-off"></i>
                             </button>
                         }
-                                        else
+                        else
                         {
                             <button type="submit" class="btn btn-success btn-sm" title="Aktif Et">
                                 <i class="fas fa-toggle-on"></i>

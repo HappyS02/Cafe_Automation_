@@ -16,5 +16,7 @@ namespace CafeOtomasyon.Data
         public DbSet<TableModel> Tables { get; set; }
         public DbSet<OrderModel> Orders { get; set; }
         public DbSet<OrderDetailModel> OrderDetails { get; set; }
+
+        public DbSet<ProductCommentModel> Comments { get; set; }
     }
 }

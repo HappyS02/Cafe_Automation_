@@ -1,9 +1,8 @@
-﻿@model CafeOtomasyon.Models.ProductModel
+﻿@model CafeOtomasyon.Models.CategoryModel
 
 @{
-    ViewData["Title"] = "Ürünü Sil";
+    ViewData["Title"] = "Kategoriyi Sil";
 }
-
 
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -13,7 +12,7 @@
                     <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Silme Onayı</h4>
                 </div>
                 <div class="card-body">
-                    <h5 class="card-title text-center mb-4">Bu ürünü kalıcı olarak silmek istediğinizden emin misiniz?</h5>
+                    <h5 class="card-title text-center mb-4">Bu kategoriyi silmek istediğinize emin misiniz?</h5>
 
                     <dl class="row">
                         <dt class="col-sm-4">Kategori Adı:</dt>
@@ -25,7 +24,9 @@
                         </dd>
                     </dl>
 
-                    
+                    <div class="alert alert-warning mt-3">
+                        <small>Dikkat: Bu kategoriyi silerseniz, bu kategoriye bağlı ürünler kategorisiz kalabilir!</small>
+                    </div>
 
                     <form asp-action="Delete" class="d-flex justify-content-between mt-4">
                         <input type="hidden" asp-for="Id" />

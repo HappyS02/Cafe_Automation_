@@ -313,5 +313,10 @@ namespace CafeOtomasyon.Controllers
             // Sipariş modelini PrintReceipt.cshtml adlı özel View'a gönder
             return View(orderModel);
         }
+
+
+
+
+
     }
 }

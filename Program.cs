@@ -20,6 +20,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Account/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
         options.SlidingExpiration = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // HER ZAMAN HTTPS GEREKTÝR
+        options.Cookie.SameSite = SameSiteMode.Strict;
     });
 
 // Yetkilendirme (Authorization)
@@ -32,6 +34,7 @@ builder.Services.AddSession(options =>        // Sonra Session ayarlarý
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // HER ZAMAN HTTPS GEREKTÝR
 });
 
 // MVC Servisleri (Authorize Filter dahil)
@@ -43,6 +46,16 @@ builder.Services.AddControllersWithViews(options =>
 
 // === UYGULAMA OLUÞTURMA ===
 var app = builder.Build();
+
+
+// --- (TÜRKÇE AYARI) ---
+var supportedCultures = new[] { "tr-TR" };
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture("tr-TR")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
+app.UseRequestLocalization(localizationOptions);
 
 
 // === MIDDLEWARE PIPELINE (SIRALAMA ÖNEMLÝ) ===
