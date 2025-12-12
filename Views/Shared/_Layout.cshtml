@@ -123,6 +123,10 @@
                 @* --- SADECE YÖNETİCİ --- *@
                 @if (User.IsInRole(AppRoles.Yönetici))
                 {
+                    @* --- <a asp-controller="Tables" asp-action="QrList" class="list-group-item list-group-item-action">
+                        <i class="fas fa-qrcode me-2"></i> QR Kod Oluştur
+                    </a> --- *@
+                    
                     <a asp-controller="Users" asp-action="Index" class="list-group-item list-group-item-action bg-light">
                         <i class="fas fa-user-shield me-2"></i> Kullanıcı Yönetimi
                     </a>

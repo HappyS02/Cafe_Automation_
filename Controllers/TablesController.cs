@@ -1,4 +1,5 @@
-﻿using CafeOtomasyon.Data;
+﻿using QRCoder;
+using CafeOtomasyon.Data;
 using CafeOtomasyon.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -358,7 +359,34 @@ namespace CafeOtomasyon.Controllers
 
 
 
+        // 1. QR KODLARI LİSTELEME SAYFASI
+        public IActionResult QrList()
+        {
+            var tables = _context.Tables.ToList();
+            return View(tables);
+        }
 
+        // 2. QR KOD OLUŞTURUCU (Resim Olarak Döndürür)
+        public IActionResult GenerateQr(int tableId)
+        {
+            // Müşterinin gideceği adres (Örn: https://site.com/Home/Menu)
+            // Localhost'ta çalıştığın için şu anlık Request.Host kullanıyoruz.
+            // Gerçek sunucuya atınca otomatik oranın adresi olur.
+            string domain = $"{Request.Scheme}://{Request.Host}";
+            string url = $"{domain}/Home/Menu?tableId={tableId}";
+
+            using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
+            {
+                // QR Kodun verisini oluştur
+                QRCodeData qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
+
+                // PngByteQRCode kullanarak resme çevir (Cross-platform uyumlu)
+                PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
+                byte[] qrCodeImage = qrCode.GetGraphic(20); // 20 = Piksel boyutu
+
+                return File(qrCodeImage, "image/png");
+            }
+        }
 
     }
 }
