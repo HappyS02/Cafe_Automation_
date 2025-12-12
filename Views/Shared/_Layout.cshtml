@@ -13,6 +13,72 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/CafeOtomasyon.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+    <style>
+        /* --- SİDEBAR (SOL MENÜ) AÇIK TEMA TASARIMI --- */
+
+        /* 1. Menünün Genel Arka Planı (BEYAZ) */
+        #sidebar-wrapper {
+            background-color: #ffffff; /* Beyaz Zemin */
+            min-height: 100vh;
+            border-right: 1px solid #dee2e6; /* Sağda ince gri çizgi */
+        }
+
+        /* 2. Menü Başlığı (Logo Alanı) */
+        .sidebar-heading {
+            color: #333; /* Koyu Gri Yazı */
+            font-weight: bold;
+            letter-spacing: 1px;
+            padding: 1.5rem 1.25rem;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #dee2e6;
+            text-transform: uppercase;
+            background-color: #f8f9fa; /* Başlık azıcık gri olsun */
+        }
+
+        /* 3. Linklerin Normal Hali */
+        .list-group-item {
+            background-color: transparent !important;
+            color: #495057 !important; /* Yazı Rengi: Koyu Gri */
+            border: none !important;
+            border-bottom: 1px solid #f0f0f0 !important; /* Altlarına çok silik çizgi */
+            padding: 15px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease; /* Hareket efekti */
+            border-left: 4px solid transparent !important; /* Sol çizgi gizli */
+        }
+
+            /* 4. HOVER EFEKTİ (Fare Üzerine Gelince) */
+            .list-group-item:hover {
+                background-color: #fff3cd !important; /* Zemin çok açık SARI (veya gri istersen #f8f9fa yap) */
+                color: #000 !important; /* Yazı Tam SİYAH */
+                border-left: 4px solid #ffc107 !important; /* Solda belirgin SARI çizgi */
+                padding-left: 25px; /* Sağa kayma efekti */
+                cursor: pointer;
+            }
+
+            /* 5. İkonların Hareketi */
+            .list-group-item i {
+                width: 25px;
+                color: #6c757d; /* İkonlar başta gri */
+                transition: transform 0.3s;
+            }
+
+            /* Hover olunca ikon */
+            .list-group-item:hover i {
+                transform: scale(1.2); /* Büyür */
+                color: #ffc107; /* Sarı olur */
+            }
+
+            /* Aktif Sayfa */
+            .list-group-item.active {
+                background-color: #ffc107 !important; /* Sarı Zemin */
+                color: #000 !important; /* Siyah Yazı */
+                font-weight: bold;
+                border-left: 4px solid #000 !important;
+                border-color: #ffc107 !important;
+            }
+    </style>
 </head>
 
 <body>
