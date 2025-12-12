@@ -1,225 +1,163 @@
 ﻿@model IEnumerable<CafeOtomasyon.Models.OrderModel>
 
-
-
 @{
-
     ViewData["Title"] = "Aktif Siparişler";
-
+    decimal totalRevenue = Model.Sum(x => x.TotalAmount); // Ekrandaki toplam açık tutar
 }
 
+<div class="container-fluid mt-4">
 
-
-<h1>Aktif Siparişler</h1>
-
-<p>Ödemesi alınmamış, devam eden siparişler.</p>
-
-
-
-<div class="row mb-3">
-
-    <div class="col-md-8">
-
-        <form asp-action="ActiveOrders" method="get">
-
-            <div class="input-group">
-
-                <input type="text" name="searchString" class="form-control" placeholder="Masa adına göre ara..." value="@ViewData["CurrentFilter"]">
-
-                <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i> Ara</button>
-
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm bg-primary text-white h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="me-3 bg-white bg-opacity-25 p-3 rounded-circle">
+                        <i class="fas fa-utensils fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 opacity-75">Açık Masa Sayısı</h6>
+                        <h3 class="fw-bold mb-0">@Model.Count()</h3>
+                    </div>
+                </div>
             </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm bg-success text-white h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="me-3 bg-white bg-opacity-25 p-3 rounded-circle">
+                        <i class="fas fa-lira-sign fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 opacity-75">Anlık Toplam Tutar</h6>
+                        <h3 class="fw-bold mb-0">@totalRevenue.ToString("C0")</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        </form>
-
+        <div class="col-md-12 col-lg-6 mt-3 mt-lg-0">
+            <div class="card border-0 shadow-sm h-100 d-flex justify-content-center px-3 py-3">
+                <form asp-action="ActiveOrders" method="get" class="d-flex gap-2">
+                    <input type="text" name="searchString" class="form-control" placeholder="Masa adı ara..." value="@ViewData["CurrentFilter"]">
+                    <button class="btn btn-outline-primary" type="submit"><i class="fas fa-search"></i> Ara</button>
+                    <a asp-action="ActiveOrders" class="btn btn-outline-secondary"><i class="fas fa-sync-alt"></i></a>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <div class="col-md-4">
-
-        @* Buraya belki "Tümünü Yenile" butonu eklenebilir *@
-
-    </div>
-
-</div>
-
-
-
-<table class="table table-hover">
-
-    <thead class="thead-light">
-
-        <tr>
-
-            <th>Masa</th>
-
-            <th>Açılış Saati</th>
-
-            <th class="text-end">Güncel Tutar</th>
-
-            <th class="text-center" style="width: 250px;">İşlemler</th>
-
-        </tr>
-
-    </thead>
-
-    <tbody>
-
-        @foreach (var order in Model)
-
-        {
-
-            <tr>
-
-                <td><strong>@(order.Table?.Name ?? "N/A")</strong></td>
-
-                <td>@order.OpenTime.ToString("HH:mm:ss") (@order.OpenTime.ToShortDateString())</td>
-
-                <td class="text-end"><strong>@order.TotalAmount.ToString("C")</strong></td>
-
-                <td class="text-center">
-
-                    <button class="btn btn-primary btn-sm me-1 btn-view-details"
-
-                            data-bs-toggle="modal"
-
-                            data-bs-target="#tableModal"
-
-                            data-table-id="@order.TableModelId"
-
-                            data-table-name="@(order.Table?.Name ?? "N/A")"
-
-                            title="Detayları Gör / Düzenle">
-
-                        <i class="fas fa-pencil-alt"></i> Detay/Düzenle
-
-                    </button>
-
-
-
-                    <a asp-action="PrintReceipt" asp-route-id="@order.Id" target="_blank" class="btn btn-secondary btn-sm me-1" title="Adisyon Yazdır">
-
-                        <i class="fas fa-print"></i> Yazdır
-
-                    </a>
-
-
-
-                    <button class="btn btn-success btn-sm btn-take-payment"
-
-                            data-order-id="@order.Id"
-
-                            data-table-name="@(order.Table?.Name ?? "N/A")"
-
-                            data-total-amount="@order.TotalAmount.ToString("F2")"
-
-                            title="Ödeme Al ve Kapat">
-
-                        <i class="fas fa-cash-register"></i> Ödeme Al
-
-                    </button>
-
-                </td>
-
-            </tr>
-
-        }
-
-    </tbody>
-
-</table>
-
-
-
-@section Scripts {
-
-    <script>
-
-        document.addEventListener('DOMContentLoaded', function () {
-
-            const paymentButtons = document.querySelectorAll('.btn-take-payment');
-
-
-
-            paymentButtons.forEach(button => {
-
-                button.addEventListener('click', function () {
-
-                    const orderId = this.getAttribute('data-order-id');
-
-                    const tableName = this.getAttribute('data-table-name');
-
-                    const totalAmount = parseFloat(this.getAttribute('data-total-amount')).toFixed(2); // String'i sayıya çevir
-
-
-
-                    if (!confirm(`${tableName} için ${totalAmount} TL tutarındaki ödeme alındı mı? Sipariş kapatılacak.`)) {
-
-                        return; // Kullanıcı iptal ederse dur
-
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 text-primary fw-bold"><i class="fas fa-clipboard-list me-2"></i> Sipariş Listesi</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Masa</th>
+                        <th>Açılış & Süre</th>
+                        <th class="text-end">Tutar</th>
+                        <th class="text-center" style="width: 280px;">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model)
+                    {
+                        // Süre Hesabı
+                        var timeSpan = DateTime.Now - order.OpenTime;
+                        string duration = $"{(int)timeSpan.TotalHours} sa {timeSpan.Minutes} dk";
+
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge bg-primary fs-6 rounded-pill px-3 py-2">
+                                    @(order.Table?.Name ?? "Bilinmiyor")
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="fw-bold text-dark">@order.OpenTime.ToString("HH:mm")</div>
+                                <small class="text-muted"><i class="far fa-clock"></i> @duration süredir açık</small>
+                            </td>
+
+                            <td class="text-end">
+                                <h5 class="mb-0 fw-bold text-success">@order.TotalAmount.ToString("C")</h5>
+                            </td>
+
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+
+                                    <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-warning text-dark fw-bold" title="Sipariş Detayı">
+                                        <i class="fas fa-edit"></i> Detay
+                                    </a>
+
+                                    <a asp-action="PrintReceipt" asp-route-id="@order.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Adisyon Yazdır">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+
+                                    <button type="button" class="btn btn-sm btn-success btn-take-payment"
+                                            data-id="@order.Id"
+                                            data-table="@(order.Table?.Name ?? "Masa")"
+                                            data-amount="@order.TotalAmount.ToString("C")"
+                                            title="Ödeme Al ve Kapat">
+                                        <i class="fas fa-cash-register"></i> Öde
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     }
 
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="fas fa-mug-hot fa-3x mb-3 text-secondary opacity-25"></i><br />
+                                Şu an aktif sipariş bulunmuyor.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
 
-                    // Sunucuya ödeme alındı isteği gönder
+            // Tüm ödeme butonlarını bul
+            const payBtns = document.querySelectorAll('.btn-take-payment');
 
-                    fetch(`/Orders/MarkOrderAsPaid?orderId=${orderId}`, {
+            payBtns.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const tableName = this.getAttribute('data-table');
+                    const amount = this.getAttribute('data-amount');
 
-                        method: 'POST',
+                    // Onay Kutusu
+                    if (confirm(`${tableName} için ${amount} ödeme alındı mı?\nSipariş kapatılacak ve masa boşalacak.`)) {
 
-                        headers: { 'Content-Type': 'application/json' }
-
-                    })
-
-                    .then(response => response.json())
-
-                    .then(data => {
-
-                        if (data.success) {
-
-                            // Başarılı olursa sayfayı yeniden yükle ki liste güncellensin
-
-                            // Daha iyisi: Sadece o satırı listeden kaldırmak olurdu.
-
-                            alert("Ödeme alındı, sipariş kapatıldı.");
-
-                            window.location.reload();
-
-                        } else {
-
-                            alert("Hata: " + data.message);
-
-                        }
-
-                    })
-
-                    .catch(error => {
-
-                         console.error("MarkOrderAsPaid Hatası:", error);
-
-                         alert("Ödeme işlemi sırasında bir ağ hatası oluştu.");
-
-                    });
-
+                        // Sunucuya İstek Gönder (AJAX)
+                        fetch(`/Orders/MarkOrderAsPaid?orderId=${id}`, {
+                            method: 'POST'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Başarılıysa sayfayı yenile
+                                location.reload();
+                            } else {
+                                alert("Hata: " + (data.message || "İşlem başarısız."));
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert("Sunucu hatası oluştu.");
+                        });
+                    }
                 });
-
             });
 
-
-
-            // Detay/Düzenle butonu için not:
-
-            // Bu butonlar Kat Planı'nda kullandığımız #tableModal'ı açmak için ayarlandı.
-
-            // Eğer #tableModal bu sayfada yoksa, ya _Layout.cshtml'e taşımalısınız
-
-            // ya da bu sayfaya özel ayrı bir detay gösterme mekanizması kurmalısınız.
-
-            // Veya asp-action="Details" asp-route-id="order.Id" linki verebilirsiniz.
-
-
-
         });
-
     </script>
-
 }

@@ -213,7 +213,7 @@ namespace CafeOtomasyon.Controllers
 
             var product = await _context.Products
                 .Include(p => p.Category)
-                .Include(p => p.Comments)
+                .Include(p => p.Comments) // <--- BU SATIR ÇOK ÖNEMLİ (Yorumları getirir)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (product == null) return NotFound();
@@ -221,15 +221,20 @@ namespace CafeOtomasyon.Controllers
             return View(product);
         }
 
+
         // POST: Products/AddComment
         [HttpPost]
-        [Authorize] // DİKKAT: Artık sadece GİRİŞ YAPMIŞ kullanıcılar (Müşteri dahil) yorum yapabilir
+        [Authorize] // Sadece giriş yapanlar
         [ValidateAntiForgeryToken]
-        // Bind kısmından 'UserName' çıkarıldı, çünkü otomatik alacağız
         public async Task<IActionResult> AddComment([Bind("ProductId,Text,Rating")] ProductCommentModel comment)
         {
-            // Kullanıcı adını sistemden otomatik al
+            // 1. Kullanıcı adını otomatik ata
+            // Eğer User.Identity.Name boşsa (ki Authorize var, olmaz ama) güvenlik olsun
             comment.UserName = User.Identity.Name ?? "Anonim";
+
+            // 2. KRİTİK NOKTA: UserName formdan gelmediği için ModelState bunu hata sayar.
+            // Biz elle atadığımız için bu hatayı listeden siliyoruz.
+            ModelState.Remove("UserName");
 
             if (ModelState.IsValid)
             {
@@ -237,9 +242,22 @@ namespace CafeOtomasyon.Controllers
                 _context.Comments.Add(comment);
                 await _context.SaveChangesAsync();
 
+                // Başarılıysa sayfaya dön
                 return RedirectToAction("Details", new { id = comment.ProductId });
             }
 
+            // --- HATA VARSA GÖRMEK İÇİN ---
+            // Eğer hala kaydetmiyorsa, hatanın ne olduğunu anlamak için 
+            // Console'a yazdırabilirsin (Geliştirme aşamasında)
+            /*
+            foreach (var modelState in ModelState.Values) {
+                foreach (var error in modelState.Errors) {
+                    System.Diagnostics.Debug.WriteLine("HATA: " + error.ErrorMessage);
+                }
+            }
+            */
+
+            // Hata varsa bile sayfaya geri dön
             return RedirectToAction("Details", new { id = comment.ProductId });
         }
     }

@@ -3,8 +3,17 @@
 @{
     ViewData["Title"] = "Sipariş Detayı";
 
-    // Süreyi hesaplamak için (History sayfasındakiyle aynı mantık)
-    string durationString = "Hesaplanamadı";
+    // Süre Hesaplama Mantığı
+    string durationString = "Devam Ediyor";
+    string statusBadgeClass = "bg-warning text-dark";
+    string statusText = "Aktif";
+
+    if (Model.IsPaid)
+    {
+        statusBadgeClass = "bg-success";
+        statusText = "Ödendi";
+    }
+
     if (Model.CloseTime.HasValue)
     {
         TimeSpan duration = Model.CloseTime.Value - Model.OpenTime;
@@ -12,81 +21,130 @@
         else if (duration.TotalHours < 1) { durationString = $"{duration.Minutes} dk"; }
         else { durationString = $"{(int)duration.TotalHours} sa {duration.Minutes} dk"; }
     }
+    else
+    {
+        // Sipariş hala açıksa şu anki zamana göre süre hesapla
+        TimeSpan duration = DateTime.Now - Model.OpenTime;
+        durationString = $"{(int)duration.TotalHours} sa {duration.Minutes} dk (Sürüyor)";
+    }
 }
 
-<h1>Sipariş Detayı (#@Model.Id)</h1>
+<div class="container mt-4">
 
-<div>
-    <h4>Özet Bilgiler</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-3">Masa</dt>
-        <dd class="col-sm-9">@(Model.Table?.Name ?? "Silinmiş Masa")</dd>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <a href="javascript:void(0);" onclick="history.back()" class="btn btn-outline-secondary rounded-circle shadow-sm me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h2 class="fw-bold mb-0 text-dark">Sipariş #@Model.Id</h2>
+                <span class="text-muted small">@Model.OpenTime.ToString("dd MMMM yyyy dddd")</span>
+            </div>
+        </div>
 
-        <dt class="col-sm-3">Açılış Saati</dt>
-        <dd class="col-sm-9">@Model.OpenTime.ToString("dd.MM.yyyy HH:mm:ss")</dd>
+        <a asp-action="PrintReceipt" asp-route-id="@Model.Id" target="_blank" class="btn btn-primary shadow-sm">
+            <i class="fas fa-print me-2"></i> Adisyon Yazdır
+        </a>
+    </div>
 
-        <dt class="col-sm-3">Kapanış Saati</dt>
-        <dd class="col-sm-9">@(Model.CloseTime?.ToString("dd.MM.yyyy HH:mm:ss") ?? "-")</dd>
+    <div class="row g-4">
 
-        <dt class="col-sm-3">Geçen Süre</dt>
-        <dd class="col-sm-9">@durationString</dd>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <h6 class="text-muted fw-bold small text-uppercase mb-3">Sipariş Durumu</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fs-5 fw-bold text-dark">Masa</span>
+                        <span class="badge bg-primary fs-6">@(Model.Table?.Name ?? "Silinmiş Masa")</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fs-5 fw-bold text-dark">Durum</span>
+                        <span class="badge @statusBadgeClass fs-6">@statusText</span>
+                    </div>
+                </div>
+            </div>
 
-        <dt class="col-sm-3">Toplam Tutar</dt>
-        <dd class="col-sm-9">@Model.TotalAmount.ToString("C")</dd>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted fw-bold small text-uppercase mb-3">Zaman Detayları</h6>
 
-        <dt class="col-sm-3">Ödeme Durumu</dt>
-        <dd class="col-sm-9">
-            @if (Model.IsPaid)
-            {
-                <span class="badge bg-success">Ödendi</span>
-            }
-            else
-            {
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light text-primary rounded-circle p-2 me-3"><i class="far fa-clock"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Açılış</small>
+                            <span class="fw-bold">@Model.OpenTime.ToString("HH:mm:ss")</span>
+                        </div>
+                    </div>
 
-                <span class="badge bg-danger">Ödenmedi</span>
-            }
-        </dd>
-    </dl>
-</div>
-<hr />
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light text-danger rounded-circle p-2 me-3"><i class="fas fa-stopwatch"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Kapanış</small>
+                            <span class="fw-bold">@(Model.CloseTime?.ToString("HH:mm:ss") ?? "-")</span>
+                        </div>
+                    </div>
 
-<h4>Sipariş İçeriği</h4>
-@if (Model.OrderDetails == null || !Model.OrderDetails.Any())
-{
-    <p>Bu siparişe ait ürün detayı bulunamadı.</p>
-}
-else
-{
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th>Ürün</th>
-                <th>Adet</th>
-                <th>Birim Fiyat (O anki)</th>
-                <th class="text-end">Satır Toplamı</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.OrderDetails)
-            {
-                <tr>
-                    <td>@(item.Product?.Name ?? "Silinmiş Ürün")</td>
-                    <td>@item.Quantity</td>
-                    <td>@item.Price.ToString("C")</td>
-                    <td class="text-end">@((item.Quantity * item.Price).ToString("C"))</td>
-                </tr>
-            }
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="3" class="text-end"><strong>Genel Toplam:</strong></td>
-                <td class="text-end"><strong>@Model.TotalAmount.ToString("C")</strong></td>
-            </tr>
-        </tfoot>
-    </table>
-}
+                    <div class="d-flex align-items-center">
+                        <div class="bg-light text-success rounded-circle p-2 me-3"><i class="fas fa-hourglass-half"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Geçen Süre</small>
+                            <span class="fw-bold">@durationString</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<div class="mt-3">
-    <a asp-action="History" class="btn btn-secondary">Sipariş Geçmişine Geri Dön</a>
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-bottom-0">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-receipt me-2 text-secondary"></i> Sipariş İçeriği</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Ürün</th>
+                                <th class="text-center">Adet</th>
+                                <th class="text-end">Birim Fiyat</th>
+                                <th class="text-end pe-4">Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.OrderDetails != null && Model.OrderDetails.Any())
+                            {
+                                @foreach (var item in Model.OrderDetails)
+                                {
+                                    <tr>
+                                        <td class="ps-4">
+                                            <span class="fw-bold text-dark">@(item.Product?.Name ?? "Silinmiş Ürün")</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-light text-dark border">@item.Quantity</span>
+                                        </td>
+                                        <td class="text-end text-muted">@item.Price.ToString("C2")</td>
+                                        <td class="text-end pe-4 fw-bold">@((item.Quantity * item.Price).ToString("C2"))</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">Ürün detayı bulunamadı.</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="bg-light">
+                            <tr>
+                                <td colspan="3" class="text-end py-3">Genel Toplam</td>
+                                <td class="text-end pe-4 py-3">
+                                    <h4 class="fw-bold text-success mb-0">@Model.TotalAmount.ToString("C2")</h4>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
