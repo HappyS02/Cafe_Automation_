@@ -20,53 +20,58 @@
 
     @foreach (var locationGroup in Model)
     {
-        <h2 class="mt-4 border-bottom">@locationGroup.Key</h2>
+        <h2 class="mt-4 border-bottom text-primary">@locationGroup.Key</h2>
 
-        <div class="d-flex flex-wrap gap-3">
+        <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-3 mb-4">
 
             @foreach (var table in locationGroup)
             {
-                // C# Bloğu: Değişken tanımları
-                string cardColorClass = "bg-light";
-                string textColorClass = "text-dark";
+                // Başlangıç Renk Ayarları
+                string cardColorClass = "bg-success text-white"; // Varsayılan: Boş
+                string iconClass = "fa-chair"; // Varsayılan İkon
 
-                // DÜZELTİLDİ: Başındaki @ işareti kaldırıldı
-                switch (table.Status)
+                if (table.Status == CafeOtomasyon.Models.TableStatus.Dolu)
                 {
-                    case CafeOtomasyon.Models.TableStatus.Boş:
-                        cardColorClass = "bg-success";
-                        textColorClass = "text-white";
-                        break;
-                    case CafeOtomasyon.Models.TableStatus.Dolu:
-                        cardColorClass = "bg-danger";
-                        textColorClass = "text-white";
-                        break;
-                    case CafeOtomasyon.Models.TableStatus.Rezerve:
-                        cardColorClass = "bg-warning";
-                        textColorClass = "text-dark";
-                        break;
+                    cardColorClass = "bg-danger text-white";
+                    iconClass = "fa-utensils"; // Doluysa çatal bıçak
+                }
+                else if (table.Status == CafeOtomasyon.Models.TableStatus.Rezerve)
+                {
+                    cardColorClass = "bg-warning text-dark";
+                    iconClass = "fa-clock"; // Rezerveyse saat (veya sandalye)
                 }
 
-                <a href="#"
-                   class="text-decoration-none table-card"
-                   data-bs-toggle="modal"
-                   data-bs-target="#tableModal"
-                   data-table-id="@table.Id"
-                   data-table-name="@table.Name">
+                <div class="col">
+                    <a href="#"
+                       class="text-decoration-none"
+                       data-bs-toggle="modal"
+                       data-bs-target="#tableModal"
+                       data-table-id="@table.Id"
+                       data-table-name="@table.Name">
 
-                    <div class="card shadow-sm @cardColorClass @textColorClass" style="width: 12rem; height: 10rem;">
-                        <div class="card-body text-center d-flex flex-column justify-content-center">
-                            <h3 class="card-title">@table.Name</h3>
-                            <p class="card-text"><i class="fas fa-users"></i> @table.Capacity Kişilik</p>
+                        <div id="table-card-@table.Id" class="card h-100 shadow-sm border-0 text-center p-3 @cardColorClass">
+
+                            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                                <h5 class="card-title fw-bold">@table.Name</h5>
+
+                                <i class="status-icon fas @iconClass fa-3x mb-3"></i>
+
+                                <p class="card-text mb-0"><i class="fas fa-users me-1"></i> @table.Capacity Kişilik</p>
+
+                                <span class="status-text badge bg-white bg-opacity-25 mt-2 fs-6">
+                                    @table.Status.ToString()
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                </a>
+                    </a>
+                </div>
             }
         </div>
     }
 </div>
 
-<div class="modal fade" id="tableModal" tabindex="-1" aria-labelledby="tableModalLabel" aria-hidden="true">
+
+<div class="modal fade" id="tableModal" tabindex="-1" aria-labelledby="tableModalLabel">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -117,235 +122,329 @@
     </div>
 </div>
 
-<div class="modal fade" id="productSelectModal" tabindex="-1" aria-labelledby="productSelectModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+<div class="modal fade" id="productSelectModal" tabindex="-1" aria-labelledby="productSelectModalLabel">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="productSelectModalLabel">Ürün Seçin</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="productSelectModalLabel">
+                    <i class="fas fa-utensils me-2"></i>Ürün Ekle
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
             </div>
-            <div class="modal-body">
-                <div id="productCardContainer" class="d-flex flex-wrap gap-3">
-                    <p>Aktif ürünler yükleniyor...</p>
+            <div class="modal-body bg-light">
+                <div id="productCardContainer" class="d-flex flex-wrap justify-content-center gap-2">
+                    <div class="text-center w-100 p-4">
+                        <div class="spinner-border text-primary"></div>
+                        <p>Ürünler yükleniyor...</p>
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
             </div>
         </div>
     </div>
 </div>
 
+
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Modal instance'larını al
-            var tableModalEl = document.getElementById('tableModal');
-            var tableModalInstance = new bootstrap.Modal(tableModalEl);
-            var productModalEl = document.getElementById('productSelectModal');
-            var productModalInstance = new bootstrap.Modal(productModalEl);
+        // --- 1. TANIMLAMALAR ---
+        var tableModalEl = document.getElementById('tableModal');
+        var tableModal = new bootstrap.Modal(tableModalEl);
+        var productModalEl = document.getElementById('productSelectModal');
+        var productModalInstance = new bootstrap.Modal(productModalEl);
 
-            // Gerekli DOM elemanlarını seç
-            var btnMakeAvailable = document.getElementById('btnMakeAvailable');
-            var btnMakeOccupied = document.getElementById('btnMakeOccupied');
-            var btnMakeReserved = document.getElementById('btnMakeReserved');
-            var btnPayment = document.getElementById('btnPayment');
-            var orderSection = document.getElementById('orderSection');
-            var orderDetailsContainer = document.getElementById('orderDetails');
-            var totalAmountSpan = tableModalEl.querySelector('#totalAmount');
-            var productCardContainer = document.getElementById('productCardContainer');
-            var btnShowProductModal = document.getElementById('btnShowProductModal');
-            var btnPrintReceipt = document.getElementById('btnPrintReceipt');
-            var printButtonSection = document.getElementById('printButtonSection');
+        var currentTableId = 0;
+        var currentOrderId = 0;
 
-            // Global değişkenler
-            var currentTableId = 0;
-            var currentOrderId = 0;
-            var currentTableName = '';
-            var currentTableCard = null;
+        // --- 2. MASA DETAY MODALI AÇILINCA ---
+        tableModalEl.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            if (!button) return;
 
-            // ---- ANA MASA MODALI ----
-            tableModalEl.addEventListener('show.bs.modal', function (event) {
-                var link = event.relatedTarget;
-                if (!link || !link.classList.contains('table-card')) {
-                    console.error("Modal tetikleyici link bulunamadı veya 'table-card' değil."); return;
-                }
-                currentTableCard = link;
-                currentTableName = link.getAttribute('data-table-name');
-                currentTableId = link.getAttribute('data-table-id');
-                tableModalEl.querySelector('.modal-title').textContent = currentTableName + ' - Sipariş Detayları';
-                tableModalEl.querySelector('#modalTableName').textContent = currentTableName;
+            var tableName = button.getAttribute('data-table-name');
+            currentTableId = button.getAttribute('data-table-id');
 
-                resetModalContent();
-                refreshOrderDetails(currentTableId);
-            });
+            document.getElementById('modalTableName').textContent = tableName;
+            document.getElementById('orderDetails').innerHTML = '<div class="text-center p-3"><div class="spinner-border text-primary"></div><br>Veriler getiriliyor...</div>';
+            document.getElementById('totalAmount').innerText = '...';
 
-            function resetModalContent(){
-                if(orderDetailsContainer) orderDetailsContainer.innerHTML = '<p>Sipariş detayları yükleniyor...</p>';
-                if(totalAmountSpan) totalAmountSpan.textContent = '...';
+            refreshOrderDetails(currentTableId);
+        });
 
-                if(orderSection) orderSection.style.display = 'none';
-                if(btnPayment) btnPayment.style.display = 'none';
-                if(printButtonSection) printButtonSection.style.display = 'none';
+        // --- 3. VERİLERİ YENİLE ---
+        function refreshOrderDetails(tableId) {
+            fetch(`/Tables/GetTableDetails/${tableId}`)
+                .then(res => res.json())
+                .then(data => {
+                    // Butonları ve Arayüzü Güncelle
+                    updateActionButtons(data.status);
 
-                if(btnMakeAvailable) btnMakeAvailable.style.display = 'none';
-                if(btnMakeOccupied) btnMakeOccupied.style.display = 'none';
-                if(btnMakeReserved) btnMakeReserved.style.display = 'none';
-            }
+                    // *** YENİ: Masanın Rengini Anlık Güncelle (Sayfa yenilemeden) ***
+                    updateTableVisual(tableId, data.status);
 
-            function refreshOrderDetails(tableId) {
-                fetch(`/Tables/GetTableDetails/${tableId}`)
-                    .then(response => response.ok ? response.json() : Promise.reject(`HTTP error! status: ${response.status}`))
-                    .then(data => {
-                        currentOrderId = data.orderId;
-                        renderOrderDetails(data.details);
-                        if(totalAmountSpan) totalAmountSpan.textContent = data.totalAmount.toFixed(2) + ' TL';
-                        updateButtonVisibility(data.status);
-                    })
-                    .catch(error => {
-                        console.error("refreshOrderDetails Hatası:", error);
-                        if(orderDetailsContainer) orderDetailsContainer.innerHTML = '<p class="text-danger">Sipariş detayları yüklenemedi.</p>';
-                    });
-            }
+                    // Müşteri Masası Kontrolü
+                    var prodBtn = document.getElementById('btnShowProductModal');
+                    var alertBox = document.getElementById('custAlert');
 
-            // ---- ÜRÜN SEÇME MODALI ----
-             if (btnShowProductModal) {
-                 btnShowProductModal.addEventListener('click', function () {
-                    if(!productCardContainer) return;
-                    productCardContainer.innerHTML = '<p>Aktif ürünler yükleniyor...</p>';
-                    fetch('/Orders/GetActiveProducts')
-                        .then(response => response.json())
-                        .then(products => {
-                            productCardContainer.innerHTML = '';
-                            if (!products || products.length === 0) { productCardContainer.innerHTML = '<p>Aktif ürün bulunamadı.</p>'; return; }
-                            products.forEach(product => {
-                                var cardHtml = `
-                                    <div class="card product-card" style="width: 10rem; cursor: pointer;" data-product-id="${product.id}">
-                                        <div class="card-body text-center">
-                                            <h6 class="card-title">${product.name}</h6>
-                                            <p class="card-text text-muted">${product.price.toFixed(2)} TL</p>
-                                        </div>
-                                    </div>`;
-                                productCardContainer.insertAdjacentHTML('beforeend', cardHtml);
-                            });
-                        })
-                        .catch(error => console.error("GetActiveProducts Hatası:", error));
-                 });
-             }
-
-            if (productCardContainer) {
-                productCardContainer.addEventListener('click', function (event) {
-                    var card = event.target.closest('.product-card');
-                    if (!card) return;
-                    var productId = card.getAttribute('data-product-id');
-
-                    if (!currentOrderId || currentOrderId <= 0) { alert("Sipariş başlamamış."); return; }
-
-                    fetch(`/Orders/AddItemToOrder?orderId=${currentOrderId}&productId=${productId}&quantity=1`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) { productModalInstance.hide(); refreshOrderDetails(currentTableId); }
-                            else { alert("Hata: " + data.message); }
-                        })
-                        .catch(error => console.error("AddItemToOrder Hatası:", error));
-                });
-            }
-
-            // ---- DURUM VE İŞLEM BUTONLARI ----
-            if(btnMakeOccupied) btnMakeOccupied.addEventListener('click', function() { postStatusChange(`/Tables/StartOrder/${currentTableId}`); });
-            if(btnMakeAvailable) btnMakeAvailable.addEventListener('click', function() { postStatusChange(`/Tables/CloseOrder/${currentTableId}`); });
-            if(btnMakeReserved) btnMakeReserved.addEventListener('click', function() { postStatusChange(`/Tables/ReserveTable/${currentTableId}`); });
-
-            if(btnPayment) btnPayment.addEventListener('click', function() {
-                 if (!currentOrderId || currentOrderId <= 0) { alert("Sipariş yok."); return; }
-                 if (!confirm("Ödeme alındı mı?")) return;
-
-                 fetch(`/Orders/MarkOrderAsPaid?orderId=${currentOrderId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) { tableModalInstance.hide(); updateCardColor(data.newStatus); currentOrderId = 0; }
-                        else { alert("Hata: " + data.message); }
-                    })
-                    .catch(error => alert("Ağ hatası."));
-             });
-
-             // ADİSYON YAZDIR
-             if (btnPrintReceipt) {
-                 btnPrintReceipt.addEventListener('click', function() {
-                    if (currentOrderId && currentOrderId > 0) {
-                        window.open(`/Orders/PrintReceipt/${currentOrderId}`, '_blank');
+                    if(data.isCustomerTable) {
+                        if(prodBtn) prodBtn.style.display = 'none';
+                        if (!alertBox) {
+                            var div = document.createElement('div');
+                            div.id = 'custAlert';
+                            div.className = 'alert alert-warning mt-2';
+                            div.innerHTML = '<i class="fas fa-lock"></i> Müşteri Masası';
+                            document.getElementById('orderDetails').before(div);
+                        }
                     } else {
-                        alert("Yazdırılacak aktif bir sipariş yok.");
+                        if(prodBtn && data.status === 'Dolu') prodBtn.style.display = 'block';
+                        if(alertBox) alertBox.remove();
                     }
-                 });
-             }
 
-            // ---- SİPARİŞ DETAY BUTONLARI (Artır/Azalt/Sil) ----
-            if(orderDetailsContainer) {
-                 orderDetailsContainer.addEventListener('click', function(event) {
-                     var button = event.target.closest('button[data-action]');
-                     if (!button) return;
-                     var detailId = button.getAttribute('data-detail-id');
-                     var action = button.getAttribute('data-action');
-                     var url = '';
+                    if (data.success && data.details) {
+                        currentOrderId = data.orderId;
+                        document.getElementById('totalAmount').innerText = formatMoney(data.totalAmount);
+                        renderTable(data.details);
+                    } else {
+                        currentOrderId = 0;
+                        document.getElementById('orderDetails').innerHTML = '<div class="alert alert-secondary">Sipariş yok.</div>';
+                        document.getElementById('totalAmount').innerText = '0,00 TL';
+                    }
+                });
+        }
 
-                     if (action === 'increase') url = `/Orders/UpdateItemQuantity?orderDetailId=${detailId}&quantityChange=1`;
-                     else if (action === 'decrease') url = `/Orders/UpdateItemQuantity?orderDetailId=${detailId}&quantityChange=-1`;
-                     else if (action === 'delete') { if (!confirm('Silinsin mi?')) return; url = `/Orders/RemoveItemFromOrder?orderDetailId=${detailId}`; }
-                     else return;
+        // --- 4. GÖRSEL GÜNCELLEME FONKSİYONU (SİHİRLİ KISIM) ---
+        function updateTableVisual(id, status) {
+            var card = document.getElementById('table-card-' + id);
+            if (!card) return; // Kart bulunamazsa çık
 
-                     fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }})
-                         .then(response => response.json())
-                         .then(data => { if (data.success) refreshOrderDetails(currentTableId); else alert("Hata: " + data.message); })
-                         .catch(error => console.error("Hata:", error));
-                 });
+            var icon = card.querySelector('.status-icon');
+            var text = card.querySelector('.status-text');
+
+            // Tüm renkleri sil
+            card.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-white', 'text-dark');
+
+            if (status === 'Dolu') {
+                card.classList.add('bg-danger', 'text-white');
+                if(icon) icon.className = 'status-icon fas fa-utensils fa-3x mb-3';
+                if(text) text.textContent = 'Dolu';
+            } else if (status === 'Rezerve') {
+                card.classList.add('bg-warning', 'text-dark');
+                if(icon) icon.className = 'status-icon fas fa-chair fa-3x mb-3';
+                if(text) text.textContent = 'Rezerve';
+            } else {
+                // Varsayılan: Boş
+                card.classList.add('bg-success', 'text-white');
+                if(icon) icon.className = 'status-icon fas fa-chair fa-3x mb-3';
+                if(text) text.textContent = 'Boş';
             }
+        }
 
-            // ---- YARDIMCI FONKSİYONLAR ----
-            function renderOrderDetails(details) {
-                 if(!orderDetailsContainer) return;
-                 if (!details || details.length === 0) { orderDetailsContainer.innerHTML = '<p>Aktif sipariş bulunmuyor.</p>'; return; }
-                 var html = '<table class="table table-sm table-striped"><thead><tr><th>Ürün</th><th>Fiyat</th><th style="width: 130px;">Adet</th><th>Toplam</th><th style="width: 50px;"></th></tr></thead><tbody>';
-                 details.forEach(item => {
-                     let detailId = item.orderDetailId;
-                     html += `<tr><td>${item.productName}</td><td>${item.price.toFixed(2)} TL</td><td><div class="input-group input-group-sm"><button class="btn btn-outline-secondary" type="button" data-action="decrease" data-detail-id="${detailId}">-</button><input type="text" class="form-control text-center" value="${item.quantity}" readonly><button class="btn btn-outline-secondary" type="button" data-action="increase" data-detail-id="${detailId}">+</button></div></td><td><strong>${(item.quantity * item.price).toFixed(2)} TL</strong></td><td><button class="btn btn-danger btn-sm" type="button" data-action="delete" data-detail-id="${detailId}"><i class="fas fa-trash-alt"></i></button></td></tr>`;
-                 });
-                 html += '</tbody></table>';
-                 orderDetailsContainer.innerHTML = html;
-             }
+        // --- 5. İŞLEM BUTONLARI ---
 
-            function updateButtonVisibility(status) {
-                 if(btnMakeAvailable) btnMakeAvailable.style.display = (status === 'Dolu' || status === 'Rezerve') ? 'inline-block' : 'none';
-                 if(btnMakeOccupied) btnMakeOccupied.style.display = (status === 'Boş') ? 'inline-block' : 'none';
-                 if(btnMakeReserved) btnMakeReserved.style.display = (status === 'Boş') ? 'inline-block' : 'none';
-                 if(btnPayment) btnPayment.style.display = (status === 'Dolu') ? 'inline-block' : 'none';
-                 if(orderSection) orderSection.style.display = (status === 'Dolu') ? 'block' : 'none';
-                 if(printButtonSection) printButtonSection.style.display = (status === 'Dolu') ? 'block' : 'none';
+        // Masayı Dolu Yap
+        document.getElementById('btnMakeOccupied').addEventListener('click', function() {
+            fetch(`/Tables/StartOrder/${currentTableId}`, { method: 'POST' })
+                .then(r => r.json()).then(d => {
+                    if(d.success) refreshOrderDetails(currentTableId);
+                });
+        });
+
+        // Masayı Boşalt
+        document.getElementById('btnMakeAvailable').addEventListener('click', function() {
+            if(!confirm("Masa boşaltılsın mı?")) return;
+            fetch(`/Tables/CloseOrder/${currentTableId}`, { method: 'POST' })
+                .then(r => r.json()).then(d => {
+                    if(d.success) refreshOrderDetails(currentTableId);
+                });
+        });
+
+        // Rezerve Et
+        document.getElementById('btnMakeReserved').addEventListener('click', function() {
+            fetch(`/Tables/ReserveTable/${currentTableId}`, { method: 'POST' })
+                .then(r => r.json()).then(d => {
+                    if(d.success) refreshOrderDetails(currentTableId);
+                });
+        });
+
+        // Ödeme Al
+        var btnPay = document.getElementById('btnPayment');
+        if (btnPay) {
+            btnPay.addEventListener('click', function() {
+                if (currentOrderId === 0) return;
+                if (confirm("Ödeme alındı mı?")) {
+                    fetch(`/Orders/MarkOrderAsPaid?orderId=${currentOrderId}`, { method: 'POST' })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                tableModal.hide(); // Modalı kapat
+                                // Masayı yeşil yap
+                                updateTableVisual(currentTableId, 'Boş');
+                                alert("Ödeme alındı.");
+                            }
+                        });
+                }
+            });
+        }
+
+        // --- 6. ÜRÜN İŞLEMLERİ (Ekle/Sil/Güncelle) ---
+        // Ürün Modalı Açılınca
+        productModalEl.addEventListener('show.bs.modal', function () {
+            var container = document.getElementById('productCardContainer');
+            container.innerHTML = '<div class="text-center mt-5"><div class="spinner-border text-primary"></div></div>';
+
+            fetch('/Orders/GetActiveProducts')
+                .then(r => r.json())
+                .then(products => {
+                    container.innerHTML = '';
+                    products.forEach(p => {
+                         let imgHtml = p.imageName
+                            ? `<img src="/img/products/${p.imageName}" class="card-img-top" style="height: 80px; object-fit: contain;">`
+                            : `<div class="d-flex align-items-center justify-content-center bg-light" style="height: 80px;"><i class="fas fa-hamburger fa-2x text-secondary opacity-50"></i></div>`;
+
+                        container.innerHTML += `
+                            <div class="card shadow-sm m-1" style="width: 130px; cursor: pointer;" onclick="addProductToTable(${p.id})">
+                                <div class="p-2">${imgHtml}</div>
+                                <div class="card-body p-2 text-center">
+                                    <h6 class="small fw-bold mb-1 text-truncate">${p.name}</h6>
+                                    <span class="badge bg-success">${formatMoney(p.price)}</span>
+                                </div>
+                            </div>`;
+                    });
+                });
+        });
+
+        function addProductToTable(productId) {
+            if (currentOrderId === 0) { alert("Önce masa açın!"); return; }
+            fetch(`/Orders/AddItemToOrder?orderId=${currentOrderId}&productId=${productId}&quantity=1`, { method: 'POST' })
+                .then(r => r.json())
+                .then(d => { if(d.success) refreshOrderDetails(currentTableId); });
+        }
+
+        function updateQty(detailId, change) {
+            fetch(`/Orders/UpdateItemQuantity?orderDetailId=${detailId}&quantityChange=${change}`, { method: 'POST' })
+                .then(r => r.json()).then(d => { if(d.success) refreshOrderDetails(currentTableId); });
+        }
+
+        function deleteItem(detailId) {
+            if(!confirm("Silinsin mi?")) return;
+            fetch(`/Orders/RemoveItemFromOrder?orderDetailId=${detailId}`, { method: 'POST' })
+                .then(r => r.json()).then(d => { if(d.success) refreshOrderDetails(currentTableId); });
+        }
+
+        // --- 7. TABLO ÇİZİMİ ve YARDIMCILAR ---
+        function renderTable(items) {
+            if (!items || items.length === 0) {
+                document.getElementById('orderDetails').innerHTML = '<div class="alert alert-warning">Ürün yok.</div>';
+                return;
             }
+            let html = `<table class="table table-striped align-middle"><thead class="table-light"><tr><th>Ürün</th><th>Fiyat</th><th>Adet</th><th>Tutar</th><th></th></tr></thead><tbody>`;
+            items.forEach(item => {
+                html += `<tr>
+                    <td class="fw-bold">${item.productName}</td>
+                    <td>${formatMoney(item.price)}</td>
+                    <td>
+                        <div class="input-group input-group-sm" style="width:100px">
+                            <button class="btn btn-outline-secondary" onclick="updateQty(${item.detailId}, -1)">-</button>
+                            <input type="text" class="form-control text-center" value="${item.quantity}" readonly>
+                            <button class="btn btn-outline-secondary" onclick="updateQty(${item.detailId}, 1)">+</button>
+                        </div>
+                    </td>
+                    <td class="fw-bold">${formatMoney(item.total)}</td>
+                    <td><button class="btn btn-sm btn-danger" onclick="deleteItem(${item.detailId})"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            document.getElementById('orderDetails').innerHTML = html;
+        }
 
-            function updateCardColor(newStatusString){
-                if (!currentTableCard) return;
-                var cardDiv = currentTableCard.querySelector('.card');
-                cardDiv.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-white', 'text-dark', 'bg-light');
-                if (newStatusString === 'Dolu') cardDiv.classList.add('bg-danger', 'text-white');
-                else if (newStatusString === 'Rezerve') cardDiv.classList.add('bg-warning', 'text-dark');
-                else cardDiv.classList.add('bg-success', 'text-white');
-             }
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
+        }
 
-            function postStatusChange(url) {
-                 fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }})
-                 .then(response => response.json())
-                 .then(data => {
-                     if (data.success) {
-                         if (data.orderId) { currentOrderId = data.orderId; }
-                         else if (data.newStatus === 'Boş' || data.newStatus === 'Rezerve') { currentOrderId = 0; }
-                         refreshOrderDetails(currentTableId);
-                         updateCardColor(data.newStatus);
-                     } else { alert("Hata: " + data.message); }
-                 })
-                 .catch(error => console.error('postStatusChange Hatası:', error));
-             }
+        function updateActionButtons(status) {
+            var btnOcc = document.getElementById('btnMakeOccupied');
+            var btnAva = document.getElementById('btnMakeAvailable');
+            var btnRes = document.getElementById('btnMakeReserved');
+            var secOrd = document.getElementById('orderSection');
+            var btnPay = document.getElementById('btnPayment');
 
-        }); // DOMContentLoaded sonu
+            // Hepsini gizle
+            if(btnOcc) btnOcc.style.display = 'none';
+            if(btnAva) btnAva.style.display = 'none';
+            if(btnRes) btnRes.style.display = 'none';
+            if(secOrd) secOrd.style.display = 'none';
+            if(btnPay) btnPay.style.display = 'none';
+
+            if (status === 'Boş') {
+                if(btnOcc) btnOcc.style.display = 'inline-block';
+                if(btnRes) btnRes.style.display = 'inline-block';
+            } else if (status === 'Dolu') {
+                if(btnAva) btnAva.style.display = 'inline-block';
+                if(secOrd) secOrd.style.display = 'block';
+                if(btnPay) btnPay.style.display = 'inline-block';
+            } else if (status === 'Rezerve') {
+                if(btnAva) btnAva.style.display = 'inline-block';
+                if(btnOcc) btnOcc.style.display = 'inline-block';
+            }
+        }
+
+
+            // --- OTOMATİK BİLDİRİM KONTROL SİSTEMİ ---
+        setInterval(checkForHelpRequests, 5000); // 5 saniyede bir kontrol et
+
+        function checkForHelpRequests() {
+            fetch('/Tables/CheckNotifications')
+                .then(res => res.json())
+                .then(tables => {
+                    // Önce tüm eski zilleri temizle
+                    document.querySelectorAll('.help-badge').forEach(el => el.remove());
+
+                    if (tables.length > 0) {
+                        // Yardım isteyen masalar var!
+                        tables.forEach(t => {
+                            // Masanın kartını bul
+                            var card = document.getElementById('table-card-' + t.id);
+                            if (card) {
+                                // Karta yanıp sönen bir zil ekle
+                                if (!card.querySelector('.help-badge')) {
+                                    var badge = document.createElement('div');
+                                    badge.className = 'help-badge position-absolute top-0 start-50 translate-middle badge rounded-pill bg-warning text-dark shadow-sm border border-dark';
+                                    badge.style.zIndex = '10';
+                                    badge.innerHTML = '<i class="fas fa-bell fa-shake"></i> YARDIM!';
+                                    card.appendChild(badge);
+
+                                    // Kartın rengini mor yap (Dikkat çeksin)
+                                    card.classList.add('border-warning', 'border-3');
+                                }
+                            }
+                        });
+
+                        // Sesli uyarı çal (Opsiyonel - Tarayıcı izin verirse)
+                        // var audio = new Audio('/sounds/bell.mp3'); audio.play();
+                    }
+                });
+        }
+
+        // --- YARDIMI KAPATMA (Masa Detay Modalı Açılınca) ---
+        // Garson masaya tıkladığında yardım isteği silinsin.
+        // tableModalEl 'show.bs.modal' olayının içine şunu ekle (en üste):
+
+        /* Mevcut kodunda:
+           tableModalEl.addEventListener('show.bs.modal', function (event) { ...
+
+           Bu bloğun içine şunu ekle:
+        */
+           var btn = event.relatedTarget;
+           var tId = btn.getAttribute('data-table-id');
+           // Yardımı veritabanından sil
+           fetch(`/Tables/ResolveHelp/${tId}`, { method: 'POST' })
+              .then(() => {
+                  // Görsel temizlik
+                  var card = document.getElementById('table-card-' + tId);
+                  if(card) {
+                      var badge = card.querySelector('.help-badge');
+                      if(badge) badge.remove();
+                      card.classList.remove('border-warning', 'border-3');
+                  }
+              });
     </script>
 }

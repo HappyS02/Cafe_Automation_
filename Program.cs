@@ -44,6 +44,9 @@ builder.Services.AddControllersWithViews(options =>
 });
 
 
+builder.Services.AddSession(); 
+builder.Services.AddHttpContextAccessor();
+
 // === UYGULAMA OLUÞTURMA ===
 var app = builder.Build();
 
@@ -69,6 +72,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+
+app.UseSession();
+
 
 app.UseRouting(); // URL'leri eþleþtirme
 

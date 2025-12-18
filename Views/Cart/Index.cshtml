@@ -1,0 +1,257 @@
+﻿@model IEnumerable<IGrouping<string, CafeOtomasyon.Models.TableModel>>
+@{
+    Layout = null;
+    ViewData["Title"] = "Masa Seçimi";
+    int? selectedTableId = ViewBag.TableId as int?;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Masa Seçimi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        /* Seçilen Masa Efekti */
+        .table-selected-active .card {
+            border: 4px solid #0d6efd !important;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(13, 110, 253, 0.5);
+        }
+
+        /* Tıklanabilir Masalar */
+        .clickable-table {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+            .clickable-table:hover {
+                transform: translateY(-5px);
+            }
+
+        /* Başkasının Masası (Pasif) */
+        .disabled-table {
+            filter: grayscale(100%);
+            opacity: 0.6;
+            cursor: not-allowed !important;
+        }
+
+        /* Rezerve Masa */
+        .reserved-table {
+            cursor: help !important;
+            transition: all 0.2s;
+        }
+
+            .reserved-table:hover {
+                transform: scale(1.02);
+                box-shadow: 0 0 10px rgba(255, 193, 7, 0.6);
+            }
+    </style>
+</head>
+<body>
+
+    <div class="container py-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+            <a href="/Home/Menu" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Menüye Dön
+            </a>
+            <h3 class="fw-bold m-0 text-primary">Masa Seçimi</h3>
+            <div style="width: 130px;"></div>
+        </div>
+
+        <div class="row mb-4 justify-content-center gap-2">
+            <div class="col-auto"><span class="badge bg-success p-2">BOŞ</span></div>
+            <div class="col-auto"><span class="badge bg-warning text-dark p-2">REZERVE</span></div>
+            <div class="col-auto"><span class="badge bg-danger p-2">DOLU</span></div>
+            <div class="col-auto"><span class="badge bg-info text-dark p-2">SİZİN MASANIZ</span></div>
+        </div>
+
+        <form asp-action="Checkout" method="post" id="checkoutForm">
+            <input type="hidden" name="tableId" id="selectedTableId" value="@(selectedTableId ?? 0)" />
+
+            <div class="container-fluid px-0">
+                @foreach (var locationGroup in Model)
+                {
+                    <h4 class="mt-4 border-bottom pb-2 text-secondary">@locationGroup.Key</h4>
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach (var table in locationGroup)
+                        {
+                            // --- C# MANTIK KISMI ---
+                            bool isMine = (selectedTableId.HasValue && selectedTableId.Value == table.Id);
+                            bool isFull = (table.Status == CafeOtomasyon.Models.TableStatus.Dolu);
+                            bool isReserved = (table.Status == CafeOtomasyon.Models.TableStatus.Rezerve);
+
+                            // Varsayılan Ayarlar (Boş Masa)
+                            string wrapperClass = "clickable-table";
+                            // ÖNEMLİ: ID'yi burada string içine gömüyoruz
+                            string onClickFn = $"selectTable({table.Id}, this)";
+
+                            string cardColor = "bg-success";
+                            string txtColor = "text-white";
+                            string icon = "fa-chair";
+                            string statusText = "BOŞ";
+
+                            if (isReserved)
+                            {
+                                // REZERVE DURUMU
+                                wrapperClass = "reserved-table";
+                                // Tıklayınca uyarı fonksiyonunu çağır (ID ile)
+                                onClickFn = $"showReservedMessage({table.Id})";
+                                cardColor = "bg-warning";
+                                txtColor = "text-dark";
+                                icon = "fa-clock";
+                                statusText = "REZERVE";
+                            }
+                            else if (isFull)
+                            {
+                                // DOLU DURUMU
+                                if (isMine)
+                                {
+                                    cardColor = "bg-info";
+                                    txtColor = "text-dark";
+                                    statusText = "SİZİN";
+                                    icon = "fa-utensils";
+                                    // Sizin masanızsa seçilebilir kalsın
+                                }
+                                else
+                                {
+                                    wrapperClass = "disabled-table";
+                                    onClickFn = ""; // Tıklanamaz
+                                    cardColor = "bg-danger";
+                                    statusText = "DOLU";
+                                    icon = "fa-ban";
+                                }
+                            }
+                            else if (selectedTableId.HasValue && !isMine)
+                            {
+                                // Zaten masası varken başka boş masayı seçemesin
+                                wrapperClass = "disabled-table";
+                                onClickFn = "";
+                            }
+
+                            // --- HTML KART ---
+                            <div class="@wrapperClass table-wrapper" onclick="@onClickFn" id="table-card-@table.Id">
+                                <div class="card shadow-sm @cardColor @txtColor" style="width: 10rem; height: 9rem;">
+                                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                                        <h5 class="card-title mb-1 text-truncate">@table.Name</h5>
+                                        <div class="my-2">
+                                            <i class="fas @icon fa-2x"></i>
+                                        </div>
+                                        <span class="badge bg-white bg-opacity-50 text-dark">@statusText</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="fixed-bottom bg-white p-3 shadow-lg border-top text-center">
+                <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold shadow" style="max-width: 500px;">
+                    SEÇİMİ ONAYLA <i class="fas fa-check-circle ms-2"></i>
+                </button>
+            </div>
+            <div style="height: 100px;"></div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <div class="modal fade" id="reservedModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-warning border-3">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>Masa Rezerve</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-calendar-check fa-3x text-warning mb-3"></i>
+                    <p class="fs-5 fw-bold">Bu masa şu an rezerve durumdadır.</p>
+                    <p class="text-muted mb-4">Bu masayı kullanmak için lütfen garson ile iletişime geçiniz.</p>
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-dark btn-lg" onclick="callWaiter()">
+                            <i class="fas fa-bell me-2"></i> Garson Çağır
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global değişken: Tıklanan rezerve masanın ID'sini tutar
+        var clickedReservedTableId = 0;
+
+        // 1. MASA SEÇME
+        function selectTable(id, element) {
+            // Pasif masalara tıklanmaz
+            if(element.classList.contains('disabled-table')) return;
+
+            // Diğer seçimleri temizle
+            document.querySelectorAll('.table-wrapper').forEach(w => w.classList.remove('table-selected-active'));
+
+            // Yenisini seç
+            element.classList.add('table-selected-active');
+            document.getElementById('selectedTableId').value = id;
+        }
+
+        // 2. REZERVE UYARISI GÖSTER
+        function showReservedMessage(id) {
+            clickedReservedTableId = id; // ID'yi hafızaya al
+            var myModal = new bootstrap.Modal(document.getElementById('reservedModal'));
+            myModal.show();
+        }
+
+        // 3. GARSON ÇAĞIR
+        function callWaiter() {
+            if(clickedReservedTableId === 0) return;
+
+            // Butonu pasif yap (Çift tıklamayı önlemek için)
+            var btn = document.querySelector('#reservedModal button');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Gönderiliyor...';
+
+            fetch(`/Tables/RequestHelp/${clickedReservedTableId}`, { method: 'POST' })
+                .then(r => r.json())
+                .then(d => {
+                    if(d.success) {
+                        alert("✅ Garsona bildirim gönderildi! Masanız kısa süre içinde açılacaktır.");
+                        var modalEl = document.getElementById('reservedModal');
+                        var modal = bootstrap.Modal.getInstance(modalEl);
+                        modal.hide();
+                    } else {
+                        alert("❌ Bir hata oluştu.");
+                    }
+                    // Butonu eski haline getir
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-bell me-2"></i> Garson Çağır';
+                })
+                .catch(err => {
+                    alert("Sunucu hatası!");
+                    btn.disabled = false;
+                });
+        }
+
+        // 4. OTOMATİK SEÇİM (Sayfa Yüklenince)
+        document.addEventListener("DOMContentLoaded", function() {
+            var savedId = document.getElementById('selectedTableId').value;
+            if(savedId && savedId != "0"){
+                var el = document.getElementById('table-card-' + savedId);
+                // Eğer masa artık pasif veya rezerve değilse otomatik seç
+                if(el && !el.classList.contains('disabled-table') && !el.classList.contains('reserved-table')) {
+                    el.classList.add('table-selected-active');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

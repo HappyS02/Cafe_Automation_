@@ -18,7 +18,12 @@
     </div>
     <div class="col-md-4 text-end">
         <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus"></i> Yeni Masa Ekle</a>
+
+        <a asp-action="ResetAll" class="btn btn-danger ms-2" onclick="return confirm('Tüm masalar BOŞ olarak ayarlanacak. Emin misiniz?');">
+            <i class="fas fa-trash-restore"></i> Masaları Sıfırla (Reset)
+        </a>
     </div>
+
 </div>
 
 <table class="table table-striped">

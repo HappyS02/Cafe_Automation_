@@ -23,9 +23,11 @@ namespace CafeOtomasyon.Controllers
         // GET: /Account/Login
         [AllowAnonymous]
         [HttpGet]
-        public IActionResult Login(string returnUrl = null)
+        [HttpGet]
+        public IActionResult Login()
         {
-            ViewData["ReturnUrl"] = returnUrl;
+            // Eski mesajları temizle
+            TempData.Clear();
             return View();
         }
 
@@ -37,13 +39,10 @@ namespace CafeOtomasyon.Controllers
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            // 1. Kullanıcıyı Bul (Kullanıcı Adı VEYA E-Posta ile)
-            // Bu sorgu: "Girilen metin username'e eşitse YA DA email'e eşitse" diye bakar.
             var user = await _context.Users.FirstOrDefaultAsync(u =>
                 (u.Username == usernameOrEmail || u.Email == usernameOrEmail) &&
                 u.Password == password);
 
-            // 2. Kullanıcı bulundu mu ve aktif mi?
             if (user != null)
             {
                 if (!user.IsActive)
@@ -52,42 +51,33 @@ namespace CafeOtomasyon.Controllers
                     return View();
                 }
 
-                // 3. Kimlik Oluştur
                 var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Name), // Ekranda Ad Soyad görünsün
-            new Claim(ClaimTypes.Role, user.Role)
-        };
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // UserId burada tutuluyor
+                    new Claim(ClaimTypes.Name, user.Name),
+                    new Claim(ClaimTypes.Role, user.Role)
+                };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties { IsPersistent = true }; // Beni hatırla
+                var authProperties = new AuthenticationProperties { IsPersistent = true };
 
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
-                // 1. Eğer MÜŞTERİ ise -> Direkt MENÜ sayfasına uçur 🚀
+                // Müşteri ise Menüye, Personel ise Hoşgeldin ekranına
                 if (user.Role == AppRoles.Musteri)
                 {
                     return RedirectToAction("Menu", "Home");
                 }
 
-                // 2. Eğer PERSONEL (Yönetici, Kasiyer, Garson) ise -> HOŞ GELDİNİZ paneline gönder 🏠
-                // Böylece Yönetim Paneli mi yoksa Menü mü diye seçebilirler.
                 return RedirectToAction("Welcome", "Home");
-
-                // (Eğer returnUrl varsa onu kontrol etmek istersen buraya ekleyebilirsin ama 
-                // yukarıdaki mantık daha temiz bir akış sağlar.)
-            
-        }
+            }
 
             ViewBag.Error = "Kullanıcı adı/E-posta veya şifre hatalı.";
             return View();
         }
-
-        // --- YENİ EKLENEN: KAYIT OLMA (REGISTER) ---
 
         // GET: /Account/Register
         [AllowAnonymous]
@@ -97,15 +87,12 @@ namespace CafeOtomasyon.Controllers
             return View();
         }
 
-
-
         // POST: /Account/Register
         [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(string name, string username, string email, string password)
         {
-            // 1. Boş alan kontrolü
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
             {
                 ViewBag.Error = "Lütfen tüm alanları doldurun.";
@@ -114,21 +101,19 @@ namespace CafeOtomasyon.Controllers
 
             try
             {
-                // 2. Kullanıcı Adı veya E-Posta daha önce alınmış mı?
                 if (await _context.Users.AnyAsync(u => u.Username == username || u.Email == email))
                 {
                     ViewBag.Error = "Bu kullanıcı adı veya e-posta zaten sistemde kayıtlı.";
                     return View();
                 }
 
-                // 3. Yeni Kullanıcıyı Oluştur
                 var newUser = new UserModel
                 {
                     Name = name,
                     Username = username,
-                    Email = email,         // <-- E-Posta eklendi
+                    Email = email,
                     Password = password,
-                    Role = AppRoles.Musteri, // Otomatik Müşteri Rolü
+                    Role = AppRoles.Musteri,
                     IsActive = true
                 };
 
@@ -145,20 +130,28 @@ namespace CafeOtomasyon.Controllers
             }
         }
 
-        // ---------------------------------------------
+        // --- ÇIKIŞ İŞLEMLERİ (DÜZELTİLDİ) ---
 
-        // POST: /Account/Logout
-        [HttpPost] // Post olması güvenlik için daha iyidir ama link ile çıkış için GET de eklenebilir
+        // POST: /Account/Logout (Butona basınca burası çalışır)
+        [HttpPost]
         public async Task<IActionResult> Logout()
         {
+            // 1. ÖNCE SESSION'I SİL (Masa bilgilerini temizle)
+            HttpContext.Session.Clear();
+
+            // 2. SONRA HESAPTAN ÇIK
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
             return RedirectToAction("Login", "Account");
         }
 
-        // Link ile çıkış yapmak istersen (Navbar'daki link için)
+        // GET: /Account/Logout (Navbar linkine basınca burası çalışır)
         [HttpGet]
         public async Task<IActionResult> LogoutGet()
         {
+            // BURAYI DA GÜNCELLEDİK: Linke tıklayınca da hafıza silinsin!
+            HttpContext.Session.Clear();
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Account");
         }

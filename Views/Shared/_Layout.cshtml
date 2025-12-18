@@ -88,7 +88,7 @@
             <div class="sidebar-heading fw-bold text-primary">Kafe Menü </div>
             <div class="list-group list-group-flush">
 
-                @* --- YÖNETİCİ GARSON VE KASİYER MENÜLERİ (Müşteri Göremez) --- *@
+                @* --- YÖNETİCİ Kasiyer MENÜLERİ --- *@
                 @if (User.IsInRole(AppRoles.Yönetici) || User.IsInRole(AppRoles.Kasiyer))
                 {
                     <a asp-controller="Tables" asp-action="FloorPlan" class="list-group-item list-group-item-action bg-light">
@@ -152,6 +152,8 @@
                 <a asp-controller="Home" asp-action="Menu" class="list-group-item list-group-item-action bg-light fw-bold text-primary">
                     <i class="fas fa-book-open me-2"></i> Menü & Değerlendirme
                 </a>
+
+
 
             </div>
         </div>

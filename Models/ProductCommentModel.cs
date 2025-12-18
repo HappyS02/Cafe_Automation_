@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace CafeOtomasyon.Models
@@ -22,5 +23,6 @@ namespace CafeOtomasyon.Models
         public int Rating { get; set; } // 1-5 arası yıldız
 
         public DateTime Date { get; set; } = DateTime.Now;
+
     }
 }

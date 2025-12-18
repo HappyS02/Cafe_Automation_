@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CafeOtomasyon.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251210102418_FixOrderColumns")]
-    partial class FixOrderColumns
+    [Migration("20251217124552_MasaKullaniciEklendi")]
+    partial class MasaKullaniciEklendi
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -91,7 +91,7 @@ namespace CafeOtomasyon.Migrations
                     b.Property<DateTime>("OpenTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("TableModelId")
+                    b.Property<int?>("TableModelId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("TotalAmount")
@@ -150,6 +150,9 @@ namespace CafeOtomasyon.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ImageName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -180,6 +183,9 @@ namespace CafeOtomasyon.Migrations
                     b.Property<int?>("CurrentOrderId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsOccupied")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Location")
                         .HasColumnType("nvarchar(max)");
 
@@ -189,6 +195,9 @@ namespace CafeOtomasyon.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -210,19 +219,15 @@ namespace CafeOtomasyon.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TC")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -258,9 +263,7 @@ namespace CafeOtomasyon.Migrations
                 {
                     b.HasOne("CafeOtomasyon.Models.TableModel", "Table")
                         .WithMany()
-                        .HasForeignKey("TableModelId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TableModelId");
 
                     b.Navigation("Table");
                 });

@@ -22,6 +22,14 @@ namespace CafeOtomasyon.Models
 
         // YENİ EKLENEN ALAN: Masanın mevcut açık siparişini tutar
         public int? CurrentOrderId { get; set; }
+
+        public bool IsOccupied { get; set; } = false;
+
+
+        // Bu masada oturan kullanıcının ID'si (Guid string olarak tutulur)
+        public string? UserId { get; set; }
+
+        public bool IsHelpRequested { get; set; } = false;
     }
 
     public enum TableStatus

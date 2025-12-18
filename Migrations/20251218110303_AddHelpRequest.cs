@@ -5,24 +5,25 @@
 namespace CafeOtomasyon.Migrations
 {
     /// <inheritdoc />
-    public partial class AddImageNameColumn : Migration
+    public partial class AddHelpRequest : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "ImageName",
-                table: "Products",
-                type: "nvarchar(max)",
-                nullable: true);
+            migrationBuilder.AddColumn<bool>(
+                name: "IsHelpRequested",
+                table: "Tables",
+                type: "bit",
+                nullable: false,
+                defaultValue: false);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ImageName",
-                table: "Products");
+                name: "IsHelpRequested",
+                table: "Tables");
         }
     }
 }

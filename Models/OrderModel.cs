@@ -8,7 +8,9 @@ namespace CafeOtomasyon.Models
     {
         public int Id { get; set; }
 
-        public int TableModelId { get; set; } // Hangi masaya ait
+        public int? TableModelId { get; set; } // Hangi masaya ait
+
+        //public int? TableId { get; set; } // Hangi masa?
         public TableModel? Table { get; set; }
 
         public DateTime OpenTime { get; set; } // Masa açılış (dolu) tarihi (Req #4)

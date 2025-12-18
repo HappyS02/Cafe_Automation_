@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CafeOtomasyon.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251023132154_AddOrderSystem")]
-    partial class AddOrderSystem
+    [Migration("20251218114425_AddProductCommentsTable")]
+    partial class AddProductCommentsTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -91,7 +91,7 @@ namespace CafeOtomasyon.Migrations
                     b.Property<DateTime>("OpenTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("TableModelId")
+                    b.Property<int?>("TableModelId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("TotalAmount")
@@ -102,6 +102,38 @@ namespace CafeOtomasyon.Migrations
                     b.HasIndex("TableModelId");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("CafeOtomasyon.Models.ProductCommentModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductCommentModel");
                 });
 
             modelBuilder.Entity("CafeOtomasyon.Models.ProductModel", b =>
@@ -116,14 +148,15 @@ namespace CafeOtomasyon.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
-                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
@@ -150,8 +183,13 @@ namespace CafeOtomasyon.Migrations
                     b.Property<int?>("CurrentOrderId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsHelpRequested")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsOccupied")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Location")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
@@ -160,6 +198,9 @@ namespace CafeOtomasyon.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -181,15 +222,15 @@ namespace CafeOtomasyon.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TC")
+                    b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -225,11 +266,20 @@ namespace CafeOtomasyon.Migrations
                 {
                     b.HasOne("CafeOtomasyon.Models.TableModel", "Table")
                         .WithMany()
-                        .HasForeignKey("TableModelId")
+                        .HasForeignKey("TableModelId");
+
+                    b.Navigation("Table");
+                });
+
+            modelBuilder.Entity("CafeOtomasyon.Models.ProductCommentModel", b =>
+                {
+                    b.HasOne("CafeOtomasyon.Models.ProductModel", "Product")
+                        .WithMany("Comments")
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Table");
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("CafeOtomasyon.Models.ProductModel", b =>
@@ -246,6 +296,11 @@ namespace CafeOtomasyon.Migrations
             modelBuilder.Entity("CafeOtomasyon.Models.OrderModel", b =>
                 {
                     b.Navigation("OrderDetails");
+                });
+
+            modelBuilder.Entity("CafeOtomasyon.Models.ProductModel", b =>
+                {
+                    b.Navigation("Comments");
                 });
 #pragma warning restore 612, 618
         }

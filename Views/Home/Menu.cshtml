@@ -1,89 +1,354 @@
 ﻿@model IEnumerable<CafeOtomasyon.Models.ProductModel>
-@using CafeOtomasyon.Data
-
 @{
     ViewData["Title"] = "Menü";
-    // Müşteriye özel layout seçimi
-    if (User.IsInRole(AppRoles.Musteri))
-    {
-        Layout = "~/Views/Shared/_CustomerLayout.cshtml";
-    }
-}
 
-<div class="text-center mb-4">
-    <h2 class="fw-bold text-dark d-block d-sm-none">Lezzetleri Keşfet</h2> <h1 class="display-5 fw-bold text-primary d-none d-sm-block">Lezzetleri Keşfet</h1> <p class="text-muted small">Beğendiğiniz ürünlere tıklayıp yorum yapabilirsiniz.</p>
-</div>
-
-@if (!Model.Any())
-{
-    <div class="alert alert-warning text-center shadow-sm rounded-3 p-4">
-        <i class="fas fa-cookie-bite fa-3x mb-3 text-warning"></i><br />
-        Henüz menüye ürün eklenmemiş. Çok yakında!
-    </div>
-}
-else
-{
-    @foreach (var group in Model.GroupBy(p => p.Category?.Name).OrderBy(g => g.Key))
-    {
-        <div class="sticky-top bg-white py-2 mb-3 shadow-sm px-3 rounded-3 border" style="top: 70px; z-index: 900;">
-            <h5 class="mb-0 fw-bold text-dark">
-                <i class="fas fa-utensils me-2 text-primary"></i> @(group.Key ?? "Diğer")
-            </h5>
-        </div>
-
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 mb-5">
-            @foreach (var product in group)
-            {
-                <div class="col">
-                    <a asp-controller="Products" asp-action="Details" asp-route-id="@product.Id" class="text-decoration-none text-dark">
-                        <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden product-card">
-
-                            <div class="card-img-top position-relative bg-white d-flex align-items-center justify-content-center p-2" style="height: 180px;">
-                                @if (!string.IsNullOrEmpty(product.ImageName))
-                                {
-                                    <img src="~/img/products/@product.ImageName" class="img-fluid rounded-3" style="max-height: 100%; object-fit: contain;" alt="@product.Name" />
-                                }
-                                else
-                                {
-                                    <i class="fas fa-hamburger fa-4x text-black-50 opacity-25"></i>
-                                }
-                                <span class="position-absolute top-0 end-0 bg-success text-white px-3 py-1 m-2 rounded-pill fw-bold shadow-sm small">
-                                    @product.Price.ToString("C2")
-                                </span>
-                            </div>
-
-                            <div class="card-body d-flex flex-column p-3 bg-light bg-opacity-50">
-                                <h6 class="card-title fw-bold mb-1 text-truncate">@product.Name</h6>
-                                <p class="card-text text-muted small text-truncate mb-3">@product.Description</p>
-
-                                <div class="mt-auto text-end">
-                                    <span class="btn btn-sm btn-outline-primary rounded-pill px-3 stretched-link">
-                                        İncele & Yorumla <i class="fas fa-chevron-right ms-1 small"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            }
-        </div>
-    }
+    // --- KESİN ÇÖZÜM: YAN MENÜYÜ KALDIR ---
+    // Eğer bu sayfa açılıyorsa, kim olursa olsun Müşteri Tasarımı (Yan Menüsüz) kullanılsın.
+    Layout = "~/Views/Shared/_CustomerLayout.cshtml";
 }
 
 <style>
-    /* Kartlara tıklama efekti */
-    .product-card {
-        transition: transform 0.2s, box-shadow 0.2s;
+    .sticky-cart {
+        position: sticky;
+        top: 90px;
+        max-height: 85vh;
+        overflow-y: auto;
     }
 
-        .product-card:active {
-            transform: scale(0.98);
-        }
-    /* Mobilde dokunma hissi */
-    @@media (min-width: 768px) {
+    .product-card {
+        transition: all 0.2s;
+    }
+
         .product-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    /* GÖRSEL AYARI */
+    .product-img-container {
+        height: 160px;
+        width: 100%;
+        background-color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px 10px 0 0;
+        overflow: hidden;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .product-img {
+        max-height: 100%;
+        max-width: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+    }
+
+    /* Yıldızlama */
+    .rating {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: start;
+    }
+
+        .rating input {
+            display: none;
+        }
+
+        .rating label {
+            cursor: pointer;
+            width: 25px;
+            font-size: 25px;
+            color: #ccc;
+        }
+
+        .rating input:checked ~ label {
+            color: #ffc107;
+        }
+
+        .rating label:hover, .rating label:hover ~ label {
+            color: #ffc107;
+        }
+
+    /* Mobil */
+    @@media (max-width: 768px) {
+        .sticky-cart {
+            position: relative;
+            top: 0;
+            margin-bottom: 20px;
+        }
+
+        .cart-container {
+            order: -1;
+            margin-bottom: 20px;
         }
     }
 </style>
+
+<div class="container-fluid py-3">
+    <div class="row">
+
+        <div class="col-lg-8">
+
+            <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm border">
+                <h2 class="fw-bold text-primary m-0"><i class="fas fa-utensils me-2"></i>Menü</h2>
+
+                <a href="/Cart/Index" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm">
+                    <i class="fas fa-chair me-2"></i> MASA SEÇ / DEĞİŞTİR
+                </a>
+            </div>
+
+            @foreach (var group in Model.GroupBy(p => p.Category?.Name).OrderBy(g => g.Key))
+            {
+                <h4 class="border-bottom pb-2 mt-4 text-secondary">@(group.Key ?? "Diğer")</h4>
+                <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3">
+                    @foreach (var product in group)
+                    {
+                        <div class="col">
+                            <div class="card h-100 border-0 shadow-sm product-card">
+
+                                <div class="product-img-container cursor-pointer" onclick="openProductModal(@product.Id)">
+                                    @if (!string.IsNullOrEmpty(product.ImageName))
+                                    {
+                                        <img src="~/img/products/@product.ImageName" class="product-img" />
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-hamburger fa-3x text-secondary opacity-50"></i>
+                                    }
+                                </div>
+                                <span class="position-absolute top-0 end-0 bg-dark text-white px-2 py-1 m-2 rounded small fw-bold shadow">@product.Price.ToString("N2") ₺</span>
+
+                                <div class="card-body p-2 d-flex flex-column">
+                                    <h6 class="fw-bold mb-1 text-truncate cursor-pointer" onclick="openProductModal(@product.Id)">@product.Name</h6>
+                                    <p class="small text-muted mb-2 text-truncate">@product.Description</p>
+
+                                    <div class="mt-auto d-flex gap-2">
+                                        <button onclick="openProductModal(@product.Id)" class="btn btn-outline-secondary btn-sm w-50 rounded-pill">
+                                            İncele
+                                        </button>
+                                        <button onclick="addToDraft(@product.Id, '@product.Name', @product.Price)" class="btn btn-primary btn-sm w-50 rounded-pill fw-bold">
+                                            Ekle <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-4 cart-container">
+            <div class="card shadow border-0 sticky-cart bg-light">
+                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-clipboard-list me-2"></i>ADİSYON</span>
+                    <span id="cartTableName" class="badge bg-warning text-dark">Masa Seçilmedi</span>
+                </div>
+                <div class="card-body p-0">
+                    <div id="cartItems" style="min-height: 200px; max-height: 500px; overflow-y: auto;"></div>
+                </div>
+                <div class="card-footer bg-white border-top">
+                    <div class="d-flex justify-content-between fs-5 fw-bold mb-3">
+                        <span>TOPLAM:</span>
+                        <span id="cartTotal" class="text-success">0,00 ₺</span>
+                    </div>
+                    <button id="btnConfirmOrder" onclick="confirmOrder()" class="btn btn-secondary w-100 btn-lg fw-bold shadow-sm mb-2" disabled>
+                        SİPARİŞİ VER <i class="fas fa-paper-plane ms-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="productDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-5 mb-3 text-center bg-light rounded d-flex align-items-center justify-content-center" style="height: 250px;">
+                        <img id="modalImg" src="" class="img-fluid" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                    </div>
+                    <div class="col-md-7">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h3 id="modalTitle" class="fw-bold mb-2"></h3>
+                            <h3 id="modalPrice" class="text-success fw-bold"></h3>
+                        </div>
+                        <p id="modalDesc" class="text-muted"></p>
+                        <hr>
+                        <h5 class="fw-bold"><i class="fas fa-star text-warning me-2"></i>Yorumlar</h5>
+                        <div id="commentsList" class="mb-3" style="max-height: 150px; overflow-y: auto;"></div>
+                        <div class="bg-light p-3 rounded">
+                            <h6 class="fw-bold">Değerlendir</h6>
+                            <div class="rating mb-2 justify-content-end w-100">
+                                <input type="radio" name="rating" id="star5" value="5"><label for="star5">★</label>
+                                <input type="radio" name="rating" id="star4" value="4"><label for="star4">★</label>
+                                <input type="radio" name="rating" id="star3" value="3"><label for="star3">★</label>
+                                <input type="radio" name="rating" id="star2" value="2"><label for="star2">★</label>
+                                <input type="radio" name="rating" id="star1" value="1"><label for="star1">★</label>
+                            </div>
+                            <textarea id="commentText" class="form-control form-control-sm mb-2" placeholder="Yorumunuz..."></textarea>
+                            <input type="text" id="commentUser" class="form-control form-control-sm mb-2" placeholder="İsminiz (İsteğe bağlı)">
+                            <button onclick="submitComment()" class="btn btn-warning btn-sm w-100 fw-bold">Gönder</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() { refreshCart(); });
+
+        function addToDraft(id, name, price) {
+            let formData = new FormData();
+            formData.append('productId', id);
+            formData.append('productName', name);
+            formData.append('price', price.toString().replace(',', '.'));
+            formData.append('change', 1);
+
+            fetch('/Cart/AddToDraft', { method: 'POST', body: formData })
+                .then(r => r.json()).then(d => { if(d.success) refreshCart(); });
+        }
+
+        function updateDraft(id, change) {
+            let formData = new FormData();
+            formData.append('productId', id);
+            formData.append('change', change);
+            fetch('/Cart/AddToDraft', { method: 'POST', body: formData })
+                .then(r => r.json()).then(d => { if(d.success) refreshCart(); });
+        }
+
+        function refreshCart() {
+            fetch('/Cart/GetCartPreview').then(r => r.json()).then(data => {
+                document.getElementById('cartTableName').innerText = data.tableName;
+                document.getElementById('cartTotal').innerText = formatMoney(data.totalAmount);
+                let container = document.getElementById('cartItems');
+                let btn = document.getElementById('btnConfirmOrder');
+                let html = '<ul class="list-group list-group-flush">';
+                let hasDraft = false;
+
+                if (data.items.length === 0) html = '<div class="text-center p-5 text-muted opacity-50"><i class="fas fa-shopping-basket fa-3x mb-3"></i><p>Sepet boş.</p></div>';
+                else {
+                    data.items.forEach(item => {
+                        let isDraft = (item.status === 'draft');
+                        if(isDraft) hasDraft = true;
+                        let bg = isDraft ? 'bg-white' : 'bg-light text-muted';
+                        let badge = isDraft ? '<span class="badge bg-warning text-dark me-2">Sepette</span>' : '<span class="badge bg-success me-2"><i class="fas fa-check"></i> İletildi</span>';
+
+                        html += `<li class="list-group-item ${bg} px-3 py-2 border-bottom">
+                            <div class="d-flex justify-content-between">
+                                <div class="fw-bold text-truncate">${item.productName}</div>
+                                <div class="fw-bold">${formatMoney(item.total)}</div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small>${badge} ${formatMoney(item.price)} x ${item.quantity}</small>
+                                ${isDraft ? `<div class="btn-group btn-group-sm"><button class="btn btn-outline-secondary px-2" onclick="updateDraft(${item.productId}, -1)">-</button><button class="btn btn-outline-secondary px-2" onclick="updateDraft(${item.productId}, 1)">+</button></div>` : ''}
+                            </div>
+                        </li>`;
+                    });
+                }
+                html += '</ul>';
+                container.innerHTML = html;
+
+                btn.disabled = !hasDraft;
+                if(hasDraft) {
+                    btn.innerHTML = 'SİPARİŞİ VER <i class="fas fa-paper-plane ms-2"></i>';
+                    btn.classList.remove('btn-secondary'); btn.classList.add('btn-success');
+                } else {
+                    btn.innerHTML = 'SİPARİŞ VERİLDİ <i class="fas fa-check-double ms-2"></i>';
+                    btn.classList.remove('btn-success'); btn.classList.add('btn-secondary');
+                }
+            });
+        }
+
+        function confirmOrder() {
+            if(!confirm("Sipariş verilsin mi?")) return;
+            document.getElementById('btnConfirmOrder').disabled = true;
+            fetch('/Cart/ConfirmOrder', { method: 'POST' })
+                .then(r => r.json()).then(d => {
+                    if(d.success) { alert("Sipariş alındı!"); refreshCart(); }
+                    else { alert(d.message); document.getElementById('btnConfirmOrder').disabled = false; }
+                });
+        }
+
+        var currentModalProductId = 0;
+        var detailModal = new bootstrap.Modal(document.getElementById('productDetailModal'));
+
+        function openProductModal(id) {
+            currentModalProductId = id;
+            document.getElementById('modalTitle').innerText = "Yükleniyor...";
+            document.getElementById('commentsList').innerHTML = '<div class="spinner-border spinner-border-sm"></div>';
+
+            fetch(`/Products/GetProductDetails/${id}`)
+                .then(r => r.json())
+                .then(data => {
+                    if(data.success) {
+                        document.getElementById('modalTitle').innerText = data.name;
+                        document.getElementById('modalDesc').innerText = data.description;
+                        document.getElementById('modalPrice').innerText = formatMoney(data.price);
+
+                        var imgPath = data.imageName ? `/img/products/${data.imageName}` : '';
+                        if(imgPath) {
+                            document.getElementById('modalImg').src = imgPath;
+                            document.getElementById('modalImg').parentElement.style.display = 'flex';
+                        } else {
+                            document.getElementById('modalImg').parentElement.style.display = 'none';
+                        }
+
+                        var commHtml = '';
+                        if(data.comments && data.comments.length > 0) {
+                            data.comments.forEach(c => {
+                                var stars = '';
+                                for(let i=0; i<c.rating; i++) stars += '<i class="fas fa-star text-warning"></i>';
+                                commHtml += `<div class="mb-2 border-bottom pb-1"><div class="d-flex justify-content-between"><small class="fw-bold">${c.name}</small><small>${stars}</small></div><p class="small text-muted mb-0">${c.text}</p></div>`;
+                            });
+                        } else {
+                            commHtml = '<p class="small text-muted">Henüz yorum yapılmamış. İlk yorumu sen yap!</p>';
+                        }
+                        document.getElementById('commentsList').innerHTML = commHtml;
+                        detailModal.show();
+                    }
+                });
+        }
+
+        function submitComment() {
+            var text = document.getElementById('commentText').value;
+            var user = document.getElementById('commentUser').value || 'Misafir';
+            var rating = document.querySelector('input[name="rating"]:checked')?.value || 5;
+
+            if(!text) { alert("Lütfen bir yorum yazın."); return; }
+
+            let formData = new FormData();
+            formData.append('productId', currentModalProductId);
+            formData.append('userName', user);
+            formData.append('text', text);
+            formData.append('rating', rating);
+
+            fetch('/Products/AddComment', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(d => {
+                    if(d.success) {
+                        alert("Teşekkürler!");
+                        document.getElementById('commentText').value = '';
+                        detailModal.hide();
+                    }
+                });
+        }
+
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
+        }
+    </script>
+}
