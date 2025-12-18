@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using CafeOtomasyon.Data;
-using CafeOtomasyon.Models;
+﻿using CafeOtomasyon.Data;
 using CafeOtomasyon.Extensions; // SessionExtensions class'ın olduğu yer
+using CafeOtomasyon.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace CafeOtomasyon.Controllers
@@ -188,6 +189,24 @@ namespace CafeOtomasyon.Controllers
             HttpContext.Session.Remove("DraftCart");
 
             return Json(new { success = true });
+        }
+
+
+
+        // --- QR KOD İLE HIZLI GİRİŞ ---
+        // Link şuna benzeyecek: /Cart/QrSelect?tableId=5
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult QrSelect(int tableId)
+        {
+            if (tableId <= 0) return RedirectToAction("Index"); // Hatalı ID ise masa seçime at
+
+            // 1. Masayı Session'a (Hafızaya) kaydet
+            // Sistem artık senin o masada oturduğunu biliyor.
+            HttpContext.Session.SetInt32("TableId", tableId);
+
+            // 2. Direkt Menüye fırlat
+            return RedirectToAction("Menu", "Home");
         }
     }
 }
